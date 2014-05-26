@@ -15,6 +15,6 @@ erl -setcookie xxx -sname xxx@localhost -pa apps/dctg/ebin -pa apps/dctg_worker/
 then in the erl shell:
 
 ```erlang
+dctg_config_server:set_total(2).
 dctg_controller:start_launchers([localhost, localhost]).
-dctg_launcher:launch({launcher0@localhost, os:timestamp()}).
 ```

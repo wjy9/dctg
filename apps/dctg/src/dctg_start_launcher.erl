@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, newbeams/1]).
+-export([start_link/0, newbeams/1, launch_start/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 start_link() ->
@@ -11,10 +11,13 @@ start_link() ->
 newbeams(HostList) ->
     gen_server:cast(?MODULE, {newbeams, HostList}).
 
+launch_start() ->
+    gen_server:cast(?MODULE, {launch_start}).
+
 init([]) ->
     {ok, []}.
 
-handle_cast({newbeams, HostList}, State) ->
+handle_cast({newbeams, HostList}, _State) ->
     SysArgs = "-rsh ssh -detached -hidden -smp disable +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %WJYTODO PATH
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
@@ -26,12 +29,15 @@ handle_cast({newbeams, HostList}, State) ->
     {HostIDList, _A} = lists:mapfoldl(fun(Host, Acc) -> {{Host, Acc}, Acc + 1}end, 0, HostList),
     Fun = fun({Host, ID}) -> remote_launcher(Host, ID, Args) end,
     RemoteNodes = utils:pmap(Fun, HostIDList),
+    {noreply, RemoteNodes};
+
+handle_cast({launch_start}, RemoteNodes) ->
     {T1, T2, T3} = os:timestamp(),
     StartTime = {T1, T2 + 5, T3}, % WJY hardcoded start time, 5s after all launcher started
     error_logger:info_msg("WJY: start time: ~p~n, Nodes: ~p~n", [StartTime, RemoteNodes]),
     StartLaunchers = fun(Node) -> dctg_launcher:launch({Node, StartTime}) end,
     lists:foreach(StartLaunchers, RemoteNodes),
-    {stop, normal, State}.
+    {stop, normal, RemoteNodes}.
 
 remote_launcher(Host, ID, Args) ->
     Name = list_to_atom("launcher" ++ integer_to_list(ID)),
