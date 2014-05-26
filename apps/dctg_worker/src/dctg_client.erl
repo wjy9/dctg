@@ -8,9 +8,10 @@
         handle_info/3, terminate/3, code_change/4]).
 
 start(Args) ->
+    error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
-init([Content]) ->
+init(Content) ->
     error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
     {ok, tcpconn, [], 0}.
 
@@ -21,6 +22,7 @@ tcpconn(timeout, State) ->
             %ts_mon:add({sum, connected, 1});
             ok;
         {error, Reason} ->
+            error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
             ok
     end,
     {stop, normal, State}.
@@ -31,7 +33,7 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
-handle_info(Info, StateName, State) ->
+handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, _State) ->

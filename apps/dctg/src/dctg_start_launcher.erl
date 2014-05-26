@@ -20,14 +20,15 @@ handle_cast({newbeams, HostList}, State) ->
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
     Path1 = "~/dctg/apps/dctg/ebin/",
     Path2 = "~/dctg/apps/dctg_worker/ebin/",
-    Args = SysArgs ++ " -s dctg startlauncher -dctg_worker controller "
+    Args = SysArgs ++ " -s dctg startworker -dctg_worker controller "
         ++ atom_to_list(node()) ++ " -pa " ++ Path1 ++ " -pa " ++ Path2,
     error_logger:info_msg("Args: ~p~n", [Args]),
     {HostIDList, _A} = lists:mapfoldl(fun(Host, Acc) -> {{Host, Acc}, Acc + 1}end, 0, HostList),
     Fun = fun({Host, ID}) -> remote_launcher(Host, ID, Args) end,
     RemoteNodes = utils:pmap(Fun, HostIDList),
     {T1, T2, T3} = os:timestamp(),
-    StartTime = {T1, T2 + 1, T3}, % WJY hardcoded start time, 1s after all launcher started 
+    StartTime = {T1, T2 + 5, T3}, % WJY hardcoded start time, 5s after all launcher started
+    error_logger:info_msg("WJY: start time: ~p~n, Nodes: ~p~n", [StartTime, RemoteNodes]),
     StartLaunchers = fun(Node) -> dctg_launcher:launch({Node, StartTime}) end,
     lists:foreach(StartLaunchers, RemoteNodes),
     {stop, normal, State}.
@@ -39,7 +40,7 @@ remote_launcher(Host, ID, Args) ->
 start_slave(Host, Name, Args) ->
     case slave:start(Host, Name, Args) of
         {ok, Node} ->
-            case Res = net_kernel:connect_node(Node) of
+            case net_kernel:connect_node(Node) of
                 true ->
                     error_logger:info_msg("WJY: connect_node OK~n");
                 _Else ->

@@ -12,7 +12,7 @@
 start(_StartType, _StartArgs) ->
     %error_logger:tty(false),
     %error_logger:logfile({openfile, "./" ++ atom_to_list(node()) ++ ".log"}),
-    error_logger:info_msg("ahahaha~n", []),
+    error_logger:info_msg("WJY: dctg start~n", []),
     dctg_sup:start_link().
 
 stop(_State) ->

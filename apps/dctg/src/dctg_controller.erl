@@ -15,7 +15,7 @@ stop() ->
     gen_server:cast(?MODULE, {stop}).
 
 init([]) ->
-    error_logger:info_msg("init~n"),
+    error_logger:info_msg("WJY: controller init~n"),
     {ok, []}.
 
 handle_call({start_launchers, Machines}, _From, State) ->

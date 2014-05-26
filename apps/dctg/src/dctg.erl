@@ -1,9 +1,9 @@
 -module(dctg).
 
--export([start/0, startlauncher/0]).
+-export([start/0, startworker/0]).
 
 start() ->
     application:start(dctg).
 
-startlauncher() ->
-    application:start(dctg_client).
+startworker() ->
+    application:start(dctg_worker).

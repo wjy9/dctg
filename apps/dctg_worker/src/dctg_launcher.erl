@@ -14,12 +14,14 @@ start() ->
     gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 launch({Node, StartTime}) ->
+    error_logger:info_msg("WJY: send launch~n"),
     gen_fsm:send_event({?MODULE, Node}, {launch, StartTime}).
 
 init([]) ->
+    error_logger:info_msg("WJY: launcher init~n"),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ControllerNode) of
-        {ok, {Intensity, Count, Dest, {Type, Content}}} ->
+        {Intensity, Count, Dest, {Type, Content}} ->
             case Type of
                 http -> ok;
                 raw -> ok
@@ -40,16 +42,19 @@ init([]) ->
                               count = Count,
                               dest = Dest,
                               interval = Interval,
+                              content = Content,
                               fraction = 0,
                               round = 0
                               },
+            error_logger:info_msg("WJY: State: ~p~n", [State]),
             {ok, wait, State};
         Other ->
-            State = {},
+            error_logger:info_msg("WJY: get_config failed~n"),
             exit({error, Other})
     end.
 
 wait({launch, StartTime}, State) ->
+    error_logger:info_msg("WJY: launch start~n"),
     Time = case utils:timediff(StartTime, os:timestamp()) of
                 Num when Num < 0 ->
                     0;
@@ -57,7 +62,10 @@ wait({launch, StartTime}, State) ->
                     erlang:trunc(Else)
             end,
     gen_fsm:send_event_after(Time, {launch}),
-    {next_state, launcher, State#launcher{start_time = StartTime}}.
+    {next_state, launcher, State#launcher{start_time = StartTime}};
+wait(Event, State) ->
+    error_logger:info_msg("WJY: event received ~p~n", [Event]),
+    {next_state, wait, State}.
 
 launcher({launch}, State=#launcher{count = Count}) when Count =< 0 ->
     {stop, normal, State};
@@ -68,6 +76,7 @@ launcher({launch}, State=#launcher{intensity = Intensity,
                                    content = Content,
                                    fraction = Frac,
                                    round = Round}) ->
+    error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
     Timer = TimePast + Interval * (Round + 1),

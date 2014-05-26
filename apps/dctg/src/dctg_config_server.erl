@@ -16,6 +16,7 @@ init([]) ->
     {ok, {1, 3000, {127, 0, 0, 1}, {http, "http://127.0.0.1:8080/"}}}. % {Intensity, Count, Dest, Content}
 
 handle_call({get_config}, _From, State) ->
+    error_logger:info_msg("WJY: get config~n"),
     {reply, State, State}.
 
 handle_cast(_Cast, State) ->

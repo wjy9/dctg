@@ -10,9 +10,11 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 start_child(Args) ->
-    supervisor:start_child(?MODULE,[Args]).
+    error_logger:info_msg("WJY: client sup start child args ~p~n", [Args]),
+    supervisor:start_child(?MODULE, [Args]).
 
 init([]) ->
+    error_logger:info_msg("WJY: client sup init~n"),
     SupFlags = {simple_one_for_one, 1, 2000},
     ChildSpec = [
                  {dctg_client, {dctg_client, start, []},
