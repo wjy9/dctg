@@ -1,0 +1,12 @@
+{application, dctg,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { dctg_app, []}},
+  {env, []}
+ ]}.
