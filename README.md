@@ -2,7 +2,9 @@
 
 ## compile
 
+```
 ./rebar compile
+```
 
 ## run
 
