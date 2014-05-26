@@ -10,6 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
+    error_logger:logfile({open, "~/dctg/" ++ atom_to_list(node()) ++ ".log"}),
     dctg_worker_sup:start_link().
 
 stop(_State) ->
