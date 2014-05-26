@@ -10,14 +10,16 @@
 start(Args) ->
     gen_fsm:start_link(?MODULE, Args, []).
 
-init([_Session]) ->
+init([Content]) ->
+    error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
     {ok, tcpconn, [], 0}.
 
 tcpconn(timeout, State) ->
-    Host = "myserver",
+    Host = "localhost",
     case gen_tcp:connect(Host, 80, []) of
         {ok, _Sock} ->
-            ts_mon:add({sum, connected, 1});
+            %ts_mon:add({sum, connected, 1});
+            ok;
         {error, Reason} ->
             ok
     end,

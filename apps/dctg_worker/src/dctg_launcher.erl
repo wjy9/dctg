@@ -17,7 +17,7 @@ launch({Node, StartTime}) ->
     gen_fsm:send_event({?MODULE, Node}, {launch, StartTime}).
 
 init([]) ->
-    {ok, ControllerNode} = application:get_env(dctg_client, controller),
+    {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ControllerNode) of
         {ok, {Intensity, Count, Dest, {Type, Content}}} ->
             case Type of
@@ -46,7 +46,7 @@ init([]) ->
             {ok, wait, State};
         Other ->
             State = {},
-            exit(error)
+            exit({error, Other})
     end.
 
 wait({launch, StartTime}, State) ->

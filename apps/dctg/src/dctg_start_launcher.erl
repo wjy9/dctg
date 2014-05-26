@@ -18,9 +18,10 @@ handle_cast({newbeams, HostList}, State) ->
     SysArgs = "-rsh ssh -detached -hidden -smp disable +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %WJYTODO PATH
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
-    Path = "/home/ubuntu/dctg/ebin/",
-    Args = SysArgs ++ " -s dctg startlauncher -dctg_client controller "
-        ++ atom_to_list(node()) ++ " -pa " ++ Path,
+    Path1 = "~/dctg/apps/dctg/ebin/",
+    Path2 = "~/dctg/apps/dctg_worker/ebin/",
+    Args = SysArgs ++ " -s dctg startlauncher -dctg_worker controller "
+        ++ atom_to_list(node()) ++ " -pa " ++ Path1 ++ " -pa " ++ Path2,
     error_logger:info_msg("Args: ~p~n", [Args]),
     {HostIDList, _A} = lists:mapfoldl(fun(Host, Acc) -> {{Host, Acc}, Acc + 1}end, 0, HostList),
     Fun = fun({Host, ID}) -> remote_launcher(Host, ID, Args) end,
