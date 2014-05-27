@@ -12,5 +12,5 @@ start(Hosts) ->
 
 start(Hostnames, WorkerPerVM) ->
     Fun = fun(Host, AccIn) -> lists:append(AccIn, lists:duplicate(WorkerPerVM, Host)) end,
-    Hosts = lists:foldl(Hostnames, fun(Host) -> [Host, Host, Host] end, []),
+    Hosts = lists:foldl(Fun, [], Hostnames),
     dctg_controller:start_launchers(Hosts).
