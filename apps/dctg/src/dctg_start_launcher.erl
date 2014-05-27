@@ -21,8 +21,8 @@ handle_cast({newbeams, HostList}, _State) ->
     SysArgs = "-rsh ssh -detached -hidden -smp disable +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %WJYTODO PATH
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
-    Path1 = "~/dctg/apps/dctg/ebin/",
-    Path2 = "~/dctg/apps/dctg_worker/ebin/",
+    Path1 = "/home/ubuntu/dctg/apps/dctg/ebin/",
+    Path2 = "/home/ubuntu/dctg/apps/dctg_worker/ebin/",
     Args = SysArgs ++ " -s dctg startworker -dctg_worker controller "
         ++ atom_to_list(node()) ++ " -pa " ++ Path1 ++ " -pa " ++ Path2,
     error_logger:info_msg("Args: ~p~n", [Args]),
@@ -54,6 +54,7 @@ start_slave(Host, Name, Args) ->
             end,
             Node;
         {error, Reason} ->
+            error_logger:info_msg("WJY: start slave failed: ~p~n", [Reason]),
             exit({slave_fail, Reason})
     end.
 
