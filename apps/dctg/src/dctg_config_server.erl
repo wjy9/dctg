@@ -19,7 +19,7 @@ set_total(Num) ->
 
 init([]) ->
     {ok, #state{config = 
-                    {1, 3000, {127, 0, 0, 1}, {http, "http://127.0.0.1:8080/"}}
+                    {0.1, 1000, {127, 0, 0, 1}, {http, "http://127.0.0.1:8080/"}}
                 }
     }. % {Intensity, Count, Dest, Content}
 

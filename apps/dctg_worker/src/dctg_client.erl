@@ -8,18 +8,19 @@
         handle_info/3, terminate/3, code_change/4]).
 
 start(Args) ->
-    error_logger:info_msg("WJY: start client args ~p~n", [Args]),
+    %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
 init(Content) ->
-    error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
-    {ok, tcpconn, [], 0}.
+    %error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
+    {ok, tcpconn, Content, 0}.
 
 tcpconn(timeout, State) ->
     Host = "localhost",
     case gen_tcp:connect(Host, 80, []) of
-        {ok, _Sock} ->
-            %ts_mon:add({sum, connected, 1});
+        {ok, Sock} ->
+            error_logger:info_msg("WJY: tcp connect success~n"),
+            gen_tcp:send(Sock, State),
             ok;
         {error, Reason} ->
             error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
