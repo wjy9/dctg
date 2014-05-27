@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, config/1, start/1, start/2]).
+-export([total/1, start/1, start/2]).
 
 % set total amount of launchers
 total(Num) ->
