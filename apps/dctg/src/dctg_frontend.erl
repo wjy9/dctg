@@ -19,7 +19,8 @@ start(Hostnames, WorkerPerVM) ->
 
 ipstring_to_tuple(IP) when is_list(IP) ->
     List = string:tokens(IP, "."),
-    list_to_tuple(List).
+    NewList = lists:map(fun(A) -> list_to_integer(A) end, List),
+    list_to_tuple(NewList).
 
 make_iplist({IP1, IP2, IP3, IP4}, Num) ->
     make_iplist([{IP1, IP2, IP3, IP4}], Num - 1);

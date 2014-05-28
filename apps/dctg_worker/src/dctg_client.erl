@@ -8,11 +8,11 @@
         handle_info/3, terminate/3, code_change/4]).
 
 start(Args) ->
-    %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
+    error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
 init({DestIP, Content}) ->
-    %error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
+    error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
     {ok, tcpconn, {DestIP, Content}, 0}.
 
 tcpconn(timeout, {DestIP, Content}) ->
