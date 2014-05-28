@@ -97,7 +97,7 @@ launcher({launch}, State=#launcher{intensity = Intensity,
     {next_state, launcher, State#launcher{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
 do_launch(_, Num, _, Nth) when Num =< 0 ->
-    Nth.
+    Nth;
 do_launch(Content, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
     dctg_client_sup:start_child({DestIP, Content}),

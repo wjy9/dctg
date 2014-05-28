@@ -24,5 +24,5 @@
 -record(http, {
     port = 80,
     content, % URL
-    interval, % download interval, ms
+    interval % download interval, ms
     }).
