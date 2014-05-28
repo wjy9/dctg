@@ -31,7 +31,8 @@ make_iplist(List = [{IP1, IP2, IP3, IP4} | Tail], Num) ->
 config(IP, Num, Type, Intensity, Count, LaunchNum) ->
     NewIntensity = Intensity * 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     NewCount = round(Count / LaunchNum),
-    IPList = make_iplist(IP, Num),
+    IPT = ipstring_to_tuple(IP),
+    IPList = make_iplist(IPT, Num),
     IPTuple = list_to_tuple(IPList),
     Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = Type, intensity = NewIntensity, count = NewCount},
     dctg_config_server:set_config(Config).
