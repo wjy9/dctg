@@ -1,4 +1,4 @@
--module(dctg_test)
+-module(dctg_test).
 
 -export([run/0]).
 
