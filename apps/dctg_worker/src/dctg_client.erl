@@ -7,6 +7,8 @@
 -export([init/1, handle_event/3, handle_sync_event/4, tcpconn/2,
         handle_info/3, terminate/3, code_change/4]).
 
+-include("dctg_record.hrl").
+
 start(Args) ->
     error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
