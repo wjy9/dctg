@@ -21,11 +21,12 @@ init([]) ->
     error_logger:info_msg("WJY: launcher init~n"),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ControllerNode) of
-        {Intensity, Count, Dest, {Type, Content}} ->
-            case Type of
-                http -> ok;
-                raw -> ok
-            end,
+        Config when is_record(Config, config) ->
+            Type = Config#config.type,
+            Intensity = Config#config.intensity,
+            Count = Config#config.count,
+            DestList = Config#config.dutlist,
+            Content = Config#config.protocol,
             if
                 Intensity * 10 < 1 ->
                     Interval = 100,
@@ -40,11 +41,12 @@ init([]) ->
             State = #launcher{
                               intensity = NewIntensity,
                               count = Count,
-                              dest = Dest,
+                              dest = DestList,
                               interval = Interval,
                               content = Content,
                               fraction = 0,
-                              round = 0
+                              round = 0,
+                              nth = 1
                               },
             error_logger:info_msg("WJY: State: ~p~n", [State]),
             {ok, wait, State};
@@ -62,20 +64,19 @@ wait({launch, StartTime}, State) ->
                     erlang:trunc(Else)
             end,
     gen_fsm:send_event_after(Time, {launch}),
-    {next_state, launcher, State#launcher{start_time = StartTime}};
-wait(Event, State) ->
-    error_logger:info_msg("WJY: event received ~p~n", [Event]),
-    {next_state, wait, State}.
+    {next_state, launcher, State#launcher{start_time = StartTime}}.
 
 launcher({launch}, State=#launcher{count = Count}) when Count =< 0 ->
     {stop, normal, State};
 launcher({launch}, State=#launcher{intensity = Intensity,
                                    count = Count,
+                                   dest = DestList,
                                    interval = Interval,
                                    start_time = StartTime,
                                    content = Content,
                                    fraction = Frac,
-                                   round = Round}) ->
+                                   round = Round,
+                                   nth = Nth}) ->
     error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
@@ -92,14 +93,17 @@ launcher({launch}, State=#launcher{intensity = Intensity,
             NewIntensity2 = NewIntensity
     end,
     RNum = erlang:min(NewIntensity2, Count),
-    do_launch(Content, RNum),
-    {next_state, launcher, State#launcher{count = Count - RNum, fraction = NewFrac2, round = Round + 1}}.
+    NewNth = do_launch(Content, RNum, DestList, Nth),
+    {next_state, launcher, State#launcher{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
-do_launch(_, Num) when Num =< 0 ->
-    ok;
-do_launch(Content, Num)->
-    dctg_client_sup:start_child(Content),
-    do_launch(Content, Num - 1).
+do_launch(_, Num, _, Nth) when Num =< 0 ->
+    Nth.
+do_launch(Content, Num, DestList, Nth) ->
+    DestIP = element(Nth, DestList),
+    dctg_client_sup:start_child({DestIP, Content}),
+    Size = size(DestList),
+    NewNth = (Nth rem Size) + 1,
+    do_launch(Content, Num - 1, DestList, NewNth).
 
 handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.
