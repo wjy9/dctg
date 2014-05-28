@@ -15,10 +15,12 @@ start(Args) ->
 
 init({DestIP, Content}) ->
     error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
+    error_logger:info_msg("WJY: client init time: ~p~n", [os:timestamp()]),
     {ok, tcpconn, {DestIP, Content}, 0}.
 
 tcpconn(timeout, {DestIP, Content}) ->
-    case gen_tcp:connect(DestIP, 80, []) of
+    Port = Content#http.port,
+    case gen_tcp:connect(DestIP, Port, []) of
         {ok, Sock} ->
             error_logger:info_msg("WJY: tcp connect success~n"),
             Cont = Content#http.content,
@@ -28,7 +30,7 @@ tcpconn(timeout, {DestIP, Content}) ->
             error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
             ok
     end,
-    {stop, normal, ok}.
+    {next_state, tcpconn, ok}.
 
 handle_event(_Ev, StateName, State) ->
     {next_state, StateName, State}.
@@ -36,8 +38,9 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
-handle_info(_Info, StateName, State) ->
-    {next_state, StateName, State}.
+handle_info(Info, StateName, State) ->
+    error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
+    {stop, normal, State}.
 
 terminate(_Reason, _StateName, _State) ->
     ok.
