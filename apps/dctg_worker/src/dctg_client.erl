@@ -19,7 +19,8 @@ tcpconn(timeout, {DestIP, Content}) ->
     case gen_tcp:connect(DestIP, 80, []) of
         {ok, Sock} ->
             error_logger:info_msg("WJY: tcp connect success~n"),
-            gen_tcp:send(Sock, Content),
+            Cont = Content#http.content,
+            gen_tcp:send(Sock, Cont),
             ok;
         {error, Reason} ->
             error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
