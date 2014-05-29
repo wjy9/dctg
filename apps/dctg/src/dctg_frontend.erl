@@ -30,7 +30,7 @@ make_iplist(List = [{IP1, IP2, IP3, IP4} | Tail], Num) ->
     make_iplist([{IP1, IP2, IP3, IP4 + 1} | List], Num - 1).
 
 config(IP, Num, Type, Intensity, Count, LaunchNum) ->
-    NewIntensity = Intensity * 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
+    NewIntensity = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     NewCount = round(Count / LaunchNum),
     IPT = ipstring_to_tuple(IP),
     IPList = make_iplist(IPT, Num),
@@ -40,7 +40,7 @@ config(IP, Num, Type, Intensity, Count, LaunchNum) ->
 
 config(IP, Num, Type, Intensity, Count, LaunchNum, Port, Content, Interval) when Type =:= http ->
     Http = #http{port = Port, content = Content, interval = Interval},
-    NewIntensity = Intensity * 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
+    NewIntensity = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     NewCount = round(Count / LaunchNum),
     IPT = ipstring_to_tuple(IP),
     IPList = make_iplist(IPT, Num),

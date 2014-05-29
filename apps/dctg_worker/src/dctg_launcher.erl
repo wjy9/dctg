@@ -22,7 +22,7 @@ init([]) ->
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ControllerNode) of
         Config when is_record(Config, config) ->
-            Type = Config#config.type,
+            %Type = Config#config.type,
             Intensity = Config#config.intensity,
             Count = Config#config.count,
             DestList = Config#config.dutlist,

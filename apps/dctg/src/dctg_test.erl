@@ -4,16 +4,14 @@
 
 run() ->
     Hosts = [
-            localhost,
-            tester1exp,
-            tester12exp
+            localhost
     ],
-    DutStartIP = "10.1.0.1",
-    DutNum = 8,
+    DutStartIP = "127.0.0.1",
+    DutNum = 1,
     Type = http,
     Intensity = 300, % conn/s
-    ConnCount = 3000,
-    WorkerPerVM = 1,
+    ConnCount = 1200,
+    WorkerPerVM = 3,
 
     LauncherNum = length(Hosts) * WorkerPerVM,
     Port = 80, % WJYTODO: not implemented

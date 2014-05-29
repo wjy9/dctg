@@ -7,7 +7,7 @@
 
 -record(state, {
     lau_num,
-    count = 0
+    count = 0,
     stat_arr,
     cur_time = 0
     }).
@@ -22,12 +22,14 @@ set_launchernum(Num) ->
     gen_server:cast(?MODULE, {set_launchernum, Num}).
 
 init([]) ->
+    error_logger:info_msg("WJY: monitor init~n"),
     {ok, #state{}}.
 
 handle_call(_Call, _From, State) ->
     {reply, ok, State}.
 
 handle_cast({set_launchernum, Num}, State) ->
+    error_logger:info_msg("WJY: monitor set launcher num ~p~n", [Num]),
     Array = array:new(Num),
     {noreply, State#state{lau_num = Num, stat_arr = Array}};
 
