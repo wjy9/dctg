@@ -26,5 +26,6 @@ init([]) ->
     Controller = ?CHILD(dctg_controller, worker),
     Launch = ?CHILD(dctg_start_launcher, worker),
     Config = ?CHILD(dctg_config_server, worker),
-    {ok, { {one_for_one, 5, 10}, [Controller, Launch, Config]} }.
+    Mon = ?CHILD(dctg_monitor, worker),
+    {ok, { {one_for_one, 5, 10}, [Controller, Launch, Config, Mon]} }.
 

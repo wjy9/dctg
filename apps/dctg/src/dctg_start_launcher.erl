@@ -5,6 +5,8 @@
 -export([start_link/0, newbeams/1, launch_start/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-define(START_DELAY, 5).
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -25,14 +27,15 @@ handle_cast({newbeams, HostList}, _State) ->
     Args = SysArgs ++ " -s dctg startworker -dctg_worker controller "
         ++ atom_to_list(node()) ++ PA,
     error_logger:info_msg("Args: ~p~n", [Args]),
-    {HostIDList, _A} = lists:mapfoldl(fun(Host, Acc) -> {{Host, Acc}, Acc + 1}end, 0, HostList),
+    {HostIDList, LauncherNum} = lists:mapfoldl(fun(Host, Acc) -> {{Host, Acc}, Acc + 1}end, 0, HostList),
+    dctg_monitor:set_launchernum(LauncherNum),
     Fun = fun({Host, ID}) -> remote_launcher(Host, ID, Args) end,
     RemoteNodes = utils:pmap(Fun, HostIDList),
     {noreply, RemoteNodes};
 
 handle_cast({launch_start}, RemoteNodes) ->
     {T1, T2, T3} = os:timestamp(),
-    StartTime = {T1, T2 + 5, T3}, % WJY hardcoded start time, 5s after all launcher started
+    StartTime = {T1, T2 + ?START_DELAY, T3}, % WJY hardcoded start time, START_DELAYs after all launcher started
     error_logger:info_msg("WJY: start time: ~p~n, Nodes: ~p~n", [StartTime, RemoteNodes]),
     StartLaunchers = fun(Node) -> dctg_launcher:launch({Node, StartTime}) end,
     lists:foreach(StartLaunchers, RemoteNodes),
@@ -40,9 +43,6 @@ handle_cast({launch_start}, RemoteNodes) ->
 
 remote_launcher(Host, ID, Args) ->
     Name = list_to_atom("launcher" ++ integer_to_list(ID)),
-    start_slave(Host, Name, Args).
-
-start_slave(Host, Name, Args) ->
     case slave:start(Host, Name, Args) of
         {ok, Node} ->
             case net_kernel:connect_node(Node) of

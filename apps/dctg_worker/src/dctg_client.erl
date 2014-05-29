@@ -22,13 +22,12 @@ tcpconn(timeout, {DestIP, Content}) ->
     Port = Content#http.port,
     case gen_tcp:connect(DestIP, Port, []) of
         {ok, Sock} ->
-            error_logger:info_msg("WJY: tcp connect success~n"),
-            Cont = Content#http.content,
+            Cont = "GET " ++ Content#http.content ++ " HTTP/1.0\r\n\r\n",
+            error_logger:info_msg("WJY: tcp connect success ~p~n", [Cont]),
             gen_tcp:send(Sock, Cont),
-            ok;
+            dctg_stat_cache:put(connect, 1);
         {error, Reason} ->
-            error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
-            ok
+            error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason])
     end,
     {next_state, tcpconn, ok}.
 

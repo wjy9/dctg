@@ -4,13 +4,13 @@
 
 -include("dctg_record.hrl").
 
--export([start/0, launch/1]).
+-export([start_link/0, launch/1]).
 -export([init/1, launcher/2, wait/2, handle_event/3,
     handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -define(WARN_THRESH, 0.2).
 
-start() ->
+start_link() ->
     gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 launch({Node, StartTime}) ->
@@ -64,6 +64,7 @@ wait({launch, StartTime}, State) ->
                     erlang:trunc(Else)
             end,
     gen_fsm:send_event_after(Time, {launch}),
+    dctg_stat_cache:start_send(StartTime),
     {next_state, launcher, State#launcher{start_time = StartTime}}.
 
 launcher({launch}, State=#launcher{count = Count}) when Count =< 0 ->

@@ -24,7 +24,7 @@ start_link() ->
 
 init([]) ->
     ClientSup = {dctg_client_sup, {dctg_client_sup, start_link, []}, permanent, 2000, supervisor, [dctg_client_sup]},
-    Launcher = {dctg_launcher, {dctg_launcher, start, []}, transient, 2000, worker, [dctg_launcher]},
-    %MonCache = {dctg_mon_cache, {dctg_mon_cache, start, []}, transient, 2000, worker, [dctg_mon_cache]},
-    {ok, { {one_for_one, 5, 10}, [ClientSup, Launcher]} }.
+    Launcher = {dctg_launcher, {dctg_launcher, start_link, []}, transient, 2000, worker, [dctg_launcher]},
+    StatCache = {dctg_stat_cache, {dctg_stat_cache, start_link, []}, transient, 2000, worker, [dctg_stat_cache]},
+    {ok, { {one_for_one, 5, 10}, [ClientSup, Launcher, StatCache]} }.
 
