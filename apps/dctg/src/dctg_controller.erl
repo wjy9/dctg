@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, stop/0, start_launchers/1]).
+-export([start_link/0, stop/0, start_launchers/1, status/0, finish/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 start_link() ->
@@ -14,16 +14,34 @@ start_launchers(Machines) ->
 stop() ->
     gen_server:cast(?MODULE, {stop}).
 
+status() ->
+    gen_server:call(?MODULE, {status}).
+
+finish() ->
+    gen_server:cast(?MODULE, {finish}).
+
 init([]) ->
     error_logger:info_msg("WJY: controller init~n"),
-    {ok, []}.
+    {ok, wait}.
 
-handle_call({start_launchers, Machines}, _From, State) ->
+handle_call({start_launchers, Machines}, _From, _State) ->
     dctg_start_launcher:newbeams(Machines),
-    {reply, ok, State}.
+    {reply, ok, running};
 
-handle_cast({stop}, State) ->
-    {stop, normal, State}.
+handle_call({status}, _From, State) ->
+    {reply, State, State}.
+
+handle_cast({finish}, _State) ->
+    dctg_start_launcher:stop(),
+    dctg_monitor:stop(),
+    dctg_config_server:stop(),
+    {noreply, finish};
+
+handle_cast({stop}, _State) ->
+    dctg_start_launcher:stop(),
+    dctg_monitor:stop(),
+    dctg_config_server:stop(),
+    {noreply, wait}.
 
 handle_info(_Info, State) ->
     {noreply, State}.

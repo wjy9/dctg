@@ -9,8 +9,8 @@ run() ->
     DutStartIP = "127.0.0.1",
     DutNum = 1,
     Type = http,
-    Intensity = 300, % conn/s
-    ConnCount = 1200,
+    Intensity = 1200, % conn/s
+    ConnCount = 4800,
     WorkerPerVM = 3,
 
     LauncherNum = length(Hosts) * WorkerPerVM,

@@ -10,12 +10,10 @@
 -include("dctg_record.hrl").
 
 start(Args) ->
-    error_logger:info_msg("WJY: start client args ~p~n", [Args]),
+    %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
 init({DestIP, Content}) ->
-    error_logger:info_msg("WJY: client: Content: ~p~n", [Content]),
-    error_logger:info_msg("WJY: client init time: ~p~n", [os:timestamp()]),
     {ok, tcpconn, {DestIP, Content}, 0}.
 
 tcpconn(timeout, {DestIP, Content}) ->
@@ -23,7 +21,7 @@ tcpconn(timeout, {DestIP, Content}) ->
     case gen_tcp:connect(DestIP, Port, []) of
         {ok, Sock} ->
             Cont = "GET " ++ Content#http.content ++ " HTTP/1.0\r\n\r\n",
-            error_logger:info_msg("WJY: tcp connect success ~p~n", [Cont]),
+            %error_logger:info_msg("WJY: tcp connect success ~p~n", [Cont]),
             gen_tcp:send(Sock, Cont),
             dctg_stat_cache:put(connect, 1);
         {error, Reason} ->
@@ -37,8 +35,8 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
-handle_info(Info, StateName, State) ->
-    error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
+handle_info(_Info, _StateName, State) ->
+    %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     {stop, normal, State}.
 
 terminate(_Reason, _StateName, _State) ->

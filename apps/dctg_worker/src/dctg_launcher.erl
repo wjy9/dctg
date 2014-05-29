@@ -14,11 +14,11 @@ start_link() ->
     gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 launch({Node, StartTime}) ->
-    error_logger:info_msg("WJY: send launch~n"),
+    %error_logger:info_msg("WJY: send launch~n"),
     gen_fsm:send_event({?MODULE, Node}, {launch, StartTime}).
 
 init([]) ->
-    error_logger:info_msg("WJY: launcher init~n"),
+    %error_logger:info_msg("WJY: launcher init~n"),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ControllerNode) of
         Config when is_record(Config, config) ->
@@ -48,7 +48,7 @@ init([]) ->
                               round = 0,
                               nth = 1
                               },
-            error_logger:info_msg("WJY: State: ~p~n", [State]),
+            %error_logger:info_msg("WJY: State: ~p~n", [State]),
             {ok, wait, State};
         Other ->
             error_logger:info_msg("WJY: get_config failed~n"),
@@ -56,7 +56,7 @@ init([]) ->
     end.
 
 wait({launch, StartTime}, State) ->
-    error_logger:info_msg("WJY: launch start~n"),
+    %error_logger:info_msg("WJY: launch start~n"),
     Time = case utils:timediff(StartTime, os:timestamp()) of
                 Num when Num < 0 ->
                     0;
@@ -78,7 +78,7 @@ launcher({launch}, State=#launcher{intensity = Intensity,
                                    fraction = Frac,
                                    round = Round,
                                    nth = Nth}) ->
-    error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
+    %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
     Timer = TimePast + Interval * (Round + 1),
@@ -116,7 +116,8 @@ handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, _State) ->
-    slave:stop(node()),
+    %error_logger:info_msg("WJY: launcher: test sup active: ~p~n", [dctg_client_sup:active()]),
+    dctg_client_killer:kill_finish(),
     ok.
 
 code_change(_Old, StateName, State, _Extra) ->

@@ -9,7 +9,7 @@
 -export([init/1]).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
+-define(CHILD(I, Type), {I, {I, start_link, []}, transient, 2000, Type, [I]}).
 
 %% ===================================================================
 %% API functions
@@ -24,7 +24,8 @@ start_link() ->
 
 init([]) ->
     ClientSup = {dctg_client_sup, {dctg_client_sup, start_link, []}, permanent, 2000, supervisor, [dctg_client_sup]},
-    Launcher = {dctg_launcher, {dctg_launcher, start_link, []}, transient, 2000, worker, [dctg_launcher]},
-    StatCache = {dctg_stat_cache, {dctg_stat_cache, start_link, []}, transient, 2000, worker, [dctg_stat_cache]},
-    {ok, { {one_for_one, 5, 10}, [ClientSup, Launcher, StatCache]} }.
+    Launcher = ?CHILD(dctg_launcher, worker),
+    StatCache = ?CHILD(dctg_stat_cache, worker),
+    Killer = ?CHILD(dctg_client_killer, worker),
+    {ok, { {one_for_one, 5, 10}, [ClientSup, Launcher, StatCache, Killer]} }.
 

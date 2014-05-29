@@ -2,10 +2,10 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, newbeams/1, launch_start/0]).
+-export([start_link/0, newbeams/1, launch_start/0, stop/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--define(START_DELAY, 5).
+-define(START_DELAY, 2).
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -16,8 +16,11 @@ newbeams(HostList) ->
 launch_start() ->
     gen_server:cast(?MODULE, {launch_start}).
 
+stop() ->
+    gen_server:cast(?MODULE, {stop}).
+
 init([]) ->
-    {ok, []}.
+    {ok, ok}.
 
 handle_cast({newbeams, HostList}, _State) ->
     SysArgs = "-rsh ssh -detached -hidden -smp disable +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
@@ -39,7 +42,16 @@ handle_cast({launch_start}, RemoteNodes) ->
     error_logger:info_msg("WJY: start time: ~p~n, Nodes: ~p~n", [StartTime, RemoteNodes]),
     StartLaunchers = fun(Node) -> dctg_launcher:launch({Node, StartTime}) end,
     lists:foreach(StartLaunchers, RemoteNodes),
-    {stop, normal, RemoteNodes}.
+    {noreply, RemoteNodes};
+
+handle_cast({stop}, State) ->
+    if
+        is_list(State) ->
+            lists:foreach(fun(Node) -> slave:stop(Node) end, State),
+            {noreply, ok};
+        true ->
+            {noreply, State}
+    end.
 
 remote_launcher(Host, ID, Args) ->
     Name = list_to_atom("launcher" ++ integer_to_list(ID)),
