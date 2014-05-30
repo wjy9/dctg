@@ -1,0 +1,16 @@
+{
+  "hosts" : ["localhost"],
+  "ips" : {
+    "localhost" : ["127.0.0.1", "127.0.0.1"]
+    },
+  "dutstartip" : "127.0.0.1",
+  "dutnum" : 1,
+  "type" : "http",
+  "intensity" : 1000,
+  "connection" : 3000,
+  "http" : {
+    "url" : "/a.html",
+    "interval" : 0,
+    "port" : 80
+    }
+  }

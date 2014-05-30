@@ -64,8 +64,14 @@ handle_cast({set_config, Config}, State) when is_record(Config, config) ->
     {noreply, State#state{config = Config}};
 
 handle_cast({set_hostip, HostList, IPArray}, State)
-        when is_list(HostList), array:is_array(IPArray)->
-    {noreply, State#state{hostlist = HostList, iparray = IPArray}};
+        when is_list(HostList) ->
+    case array:is_array(IPArray) of
+        true ->
+            {noreply, State#state{hostlist = HostList, iparray = IPArray}};
+        _ ->
+            error_logger:info_msg("WJY: config server set host ip Error!"),
+            {noreply, State}
+    end;
 
 handle_cast({init_fin}, State = #state{launcher = Count, total = Num}) ->
     error_logger:info_msg("WJY: config server init fin received~n"),

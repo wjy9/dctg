@@ -24,7 +24,7 @@ loop(Req, DocRoot) ->
     "/" ++ Path = Req:get(path),
     try
         case Req:get(method) of
-            Method when Method =:= 'GET' ->
+            Method when Method =:= 'GET'; Method =:= 'HEAD' ->
                 case Path of
                     "start" ->
                         dctg_controller:start_launchers(),
@@ -34,7 +34,9 @@ loop(Req, DocRoot) ->
                         Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
                     "status" ->
                         Status = dctg_controller:status(),
-                        Req:respond({200, [{"Content-Type", "text/plain"}], atom_to_list(Status)})
+                        Req:respond({200, [{"Content-Type", "text/plain"}], atom_to_list(Status)});
+                    _ ->
+                        Req:serve_file(Path, DocRoot)
                 end;
             'POST' ->
                 Body = Req:recv_body(),
@@ -49,7 +51,7 @@ loop(Req, DocRoot) ->
                 dctg_frontend:total(LauncherNum),
                 dctg_frontend:set_hostip(HostList, IPPropList),
 
-                DutStartIP = binary_to_list(proplists:get_value(<<"durstartip">>, JsonBody)),
+                DutStartIP = binary_to_list(proplists:get_value(<<"dutstartip">>, JsonBody)),
                 DutNum = proplists:get_value(<<"dutnum">>, JsonBody),
                 Intensity = proplists:get_value(<<"intensity">>, JsonBody),
                 Connection = proplists:get_value(<<"connection">>, JsonBody),
@@ -63,7 +65,7 @@ loop(Req, DocRoot) ->
                         URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
                         Interval = proplists:get_value(<<"interval">>, Content),
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
-                    Else ->
+                    _Else ->
                         ok
                 end,
                 Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
@@ -71,10 +73,10 @@ loop(Req, DocRoot) ->
                 Req:respond({501, [], []})
         end
     catch
-        Type:What ->
+        TypeWhat ->
             Report = ["web request failed",
                       {path, Path},
-                      {type, Type}, {what, What},
+                      {typewhat, TypeWhat},
                       {trace, erlang:get_stacktrace()}],
             error_logger:error_report(Report),
             %% NOTE: mustache templates need \ because they are not awesome.

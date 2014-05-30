@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, start/1, start/2, config/6, config/9, set_hostip/2]).
+-export([total/1, config/6, config/9, set_hostip/2]).
 
 -include("config.hrl").
 

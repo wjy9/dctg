@@ -2,7 +2,7 @@
 
 -behaviour(gen_fsm).
 
--export([start_link/0, send_stat/5, set_launchernum/1, stop/0]).
+-export([start_link/0, send_stat/4, set_launchernum/1, stop/0]).
 -export([init/1, wait/2, run/2, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -record(state, {
@@ -47,7 +47,7 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count = Count, st
                             {next_state, run, State#state{count = Count2, stat_arr = Array2}}
                     end;
                 _Value ->
-                    error_logger:info_msg("WJY: Error! ID duplicated! ~p~n", [{Val, ID, TimeStamp}]),
+                    error_logger:info_msg("WJY: Error! ID duplicated! ~p~n", [{ID, TimeStamp}]),
                     {next_state, run, State}
             end;
         true ->
