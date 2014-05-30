@@ -9,6 +9,8 @@
 
 -include("config.hrl").
 
+-define(FINISH_DELAY, 2000).
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -58,6 +60,7 @@ handle_cast({finish}, State = #state{total = Total, finish = Fin}) ->
     NewFin = Fin + 1,
     if
         NewFin >= Total ->
+            timer:sleep(?FINISH_DELAY),
             error_logger:info_msg("WJY: config server: all finished!!!~n"),
             dctg_controller:finish(),
             {noreply, State#state{finish = 0}};
