@@ -1,15 +1,26 @@
--record(launcher,
+-record(launcher_http,
     {
+    ip, % src ip
     intensity, % launch client per ms
     count, % total count of clients
     dest,
     interval, % scheduled time interval
+    port,
+    url,
+    req_interval,
     start_time,
-    content,
     fraction,
     round,
     nth % the next dest ip used is the nth of dest list
     }).
+
+-record(launcher_raw,
+{
+    intensity, % launch client per ms
+    count, % total count of clients
+    interval
+}
+).
 
 -record(config, {
     dut = {127, 0, 0, 1}, % ip of dut

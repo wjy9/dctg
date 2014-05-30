@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, start/1, start/2, config/6, config/9]).
+-export([total/1, start/1, start/2, config/6, config/9, set_hostip/2]).
 
 -include("config.hrl").
 
@@ -8,14 +8,18 @@
 total(Num) ->
     dctg_config_server:set_total(Num).
 
-% start launchers of the hosts list
-start(Hosts) ->
-    dctg_controller:start_launchers(Hosts).
+set_hostip(HostList, IPPropList) ->
+    Fun = fun(Host, AccIn) -> mapfoldfun(Host, AccIn, IPPropList) end,
+    {Hosts, IPList} = lists:mapfoldl(Fun, [], HostList),
+    NewHost = lists:flatten(Hosts),
+    IPArray = array:from_list(IPList),
+    dctg_config_server:set_hostip(NewHost, IPArray).
 
-start(Hostnames, WorkerPerVM) ->
-    Fun = fun(Host, AccIn) -> lists:append(AccIn, lists:duplicate(WorkerPerVM, Host)) end,
-    Hosts = lists:foldl(Fun, [], Hostnames),
-    dctg_controller:start_launchers(Hosts).
+mapfoldfun(H, AccIn, IPPropList) ->
+    IPList = proplists:get_value(H, IPPropList),
+    H2 = lists:duplicate(length(IPList), H),
+    AccOut = lists:append(AccIn, IPList),
+    {H2, AccOut}.
 
 ipstring_to_tuple(IP) when is_list(IP) ->
     List = string:tokens(IP, "."),
@@ -39,7 +43,7 @@ config(IP, Num, Type, Intensity, Count, LaunchNum) ->
     dctg_config_server:set_config(Config).
 
 config(IP, Num, Type, Intensity, Count, LaunchNum, Port, Content, Interval) when Type =:= http ->
-    Http = #http{port = Port, content = Content, interval = Interval},
+    Http = #http{port = Port, content = Content, interval = Interval * 1000},
     NewIntensity = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     NewCount = round(Count / LaunchNum),
     IPT = ipstring_to_tuple(IP),

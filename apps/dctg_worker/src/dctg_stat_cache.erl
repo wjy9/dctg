@@ -9,7 +9,10 @@
     id,
     controller,
     timestamp = 0,
-    connect = 0
+    connect = 0,
+    request = 0,
+    total_connect = 0,
+    total_request = 0
     }).
 
 -define(SEND_INTERVAL, 1000).
@@ -30,10 +33,16 @@ init([]) ->
     ID = utils:get_id(),
     {ok, #state{id = ID, controller = ControllerNode}}.
 
-handle_cast({put, connect, Val}, State = #state{connect = Connect}) ->
+handle_cast({put, connect, Val}, State = #state{connect = Connect, total_connect = Total}) ->
     %error_logger:info_msg("WJY: stat cache put connect~n"),
     NewConnect = Connect + Val,
-    {noreply, State#state{connect = NewConnect}};
+    NewTotal = Total + Val,
+    {noreply, State#state{connect = NewConnect, total_connect = NewTotal}};
+
+handle_cast({put, request, Val}, State = #state{request = Request, total_request = Total}) ->
+    NewRequest = Request + Val,
+    NewTotal = Total + Val,
+    {noreply, State#state{request = NewRequest, total_request = NewTotal}};
 
 handle_cast({start_send, StartTime}, State) ->
     Time = case utils:timediff(StartTime, os:timestamp()) + ?SEND_INTERVAL of
@@ -49,13 +58,17 @@ handle_cast({start_send, StartTime}, State) ->
 handle_call(_Call, _From, State) ->
     {reply, error, State}.
 
-handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, timestamp = TimeStamp, connect = Connect}) ->
+handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, timestamp = TimeStamp,
+                                            connect = Connect,
+                                            request = Request,
+                                            total_connect = TConn,
+                                            total_request = TReq}) ->
     %error_logger:info_msg("WJY: stat cache timeout send~n"),
-    dctg_monitor:send_stat(Node, connect, Connect, ID, TimeStamp),
+    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, TConn, TReq}),
     %error_logger:info_msg("WJY: stat cache send ~p~n", [{Connect, ID, TimeStamp}]),
     NewTimeStamp = TimeStamp + 1,
     erlang:start_timer(?SEND_INTERVAL, self(), send),
-    {noreply, State#state{timestamp = NewTimeStamp, connect = 0}}.
+    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0}}.
 
 terminate(_Reason, _State) ->
     ok.

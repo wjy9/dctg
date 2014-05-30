@@ -15,8 +15,8 @@
 start_link() ->
     gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-send_stat(Node, Type, Val, ID, TimeStamp) ->
-    gen_fsm:send_event({?MODULE, Node}, {stat, Type, Val, ID, TimeStamp}).
+send_stat(Node, ID, TimeStamp, Stat) ->
+    gen_fsm:send_event({?MODULE, Node}, {stat, ID, TimeStamp, Stat}).
 
 set_launchernum(Num) ->
     gen_fsm:send_event(?MODULE, {set_launchernum, Num}).
@@ -33,12 +33,12 @@ wait({set_launchernum, Num}, State) ->
     Array = array:new(Num),
     {next_state, run, State#state{lau_num = Num, stat_arr = Array}}.
 
-run({stat, connect, Val, ID, TimeStamp}, State = #state{lau_num = Lau, count = Count, stat_arr = Array, cur_time = CurTime}) ->
+run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count = Count, stat_arr = Array, cur_time = CurTime}) ->
     if
         TimeStamp == CurTime ->
             case array:get(ID, Array) of
                 undefined ->
-                    Array2 = array:set(ID, Val, Array),
+                    Array2 = array:set(ID, Stat, Array),
                     Count2 = Count + 1,
                     if
                         Count2 >= Lau ->
@@ -56,13 +56,16 @@ run({stat, connect, Val, ID, TimeStamp}, State = #state{lau_num = Lau, count = C
     end.
 
 stat_update(Array, Time, State) ->
-    Acc = 0,
-    Sum = array:foldl(fun(_I, A, B) -> A + B end, Acc, Array),
+    Fun = fun(_I, A, B) -> foldfun(A, B) end,
+    {C, R, TC, TR} = array:foldl(Fun, {0, 0, 0, 0}, Array),
     %WJYTODO: should write result to mysql
-    error_logger:info_msg("WJY: stat output ~p: ~p conn/s~n", [Time, Sum]),
+    error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [Time, C, R, TC, TR]),
     Num = State#state.lau_num,
     NewArr = array:new(Num),
     {next_state, run, State#state{count = 0, stat_arr = NewArr, cur_time = Time + 1}}.
+
+foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
+    {Ac1 + C, Ac2 + R, Ac3 + TC, Ac4 + TR}.
 
 handle_event({stop}, _, _State) ->
     error_logger:info_msg("WJY: monitor stop~n"),

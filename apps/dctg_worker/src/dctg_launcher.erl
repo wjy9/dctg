@@ -19,10 +19,11 @@ launch({Node, StartTime}) ->
 
 init([]) ->
     %error_logger:info_msg("WJY: launcher init~n"),
+    ID = utils:get_id(),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
-    case catch dctg_config_server:get_config(ControllerNode) of
-        Config when is_record(Config, config) ->
-            %Type = Config#config.type,
+    case catch dctg_config_server:get_config(ID, ControllerNode) of
+        {Config, IP} when is_record(Config, config) ->
+            Type = Config#config.type,
             Intensity = Config#config.intensity,
             Count = Config#config.count,
             DestList = Config#config.dutlist,
@@ -38,24 +39,40 @@ init([]) ->
                     NewIntensity = Intensity * 10, % WJY using 10ms interval
                     Interval = 10
             end,
-            State = #launcher{
-                              intensity = NewIntensity,
-                              count = Count,
-                              dest = DestList,
-                              interval = Interval,
-                              content = Content,
-                              fraction = 0,
-                              round = 0,
-                              nth = 1
-                              },
-            %error_logger:info_msg("WJY: State: ~p~n", [State]),
-            {ok, wait, State};
+            case Type of
+                http ->
+                    Port = Content#http.port,
+                    URL = Content#http.content,
+                    RequestInterval = Content#http.interval,
+                    State = #launcher_http{
+                                        ip = IP,
+                                        intensity = NewIntensity,
+                                        count = Count,
+                                        dest = DestList,
+                                        interval = Interval,
+                                        port = Port,
+                                        url = URL,
+                                        req_interval = RequestInterval,
+                                        fraction = 0,
+                                        round = 0,
+                                        nth = 1
+                                    },
+                    {ok, wait, State};
+                raw ->
+                    %WJYTODO: add raw support
+                    State = #launcher_raw{
+                                intensity = NewIntensity,
+                                count = Count,
+                                interval = Interval
+                    },
+                    {ok, wait, State}
+            end;
         Other ->
             error_logger:info_msg("WJY: get_config failed~n"),
             exit({error, Other})
     end.
 
-wait({launch, StartTime}, State) ->
+wait({launch, StartTime}, State) when is_record(State, launcher_http)->
     %error_logger:info_msg("WJY: launch start~n"),
     Time = case utils:timediff(StartTime, os:timestamp()) of
                 Num when Num < 0 ->
@@ -65,19 +82,24 @@ wait({launch, StartTime}, State) ->
             end,
     gen_fsm:send_event_after(Time, {launch}),
     dctg_stat_cache:start_send(StartTime),
-    {next_state, launcher, State#launcher{start_time = StartTime}}.
+    {next_state, launcher, State#launcher_http{start_time = StartTime}}.
 
-launcher({launch}, State=#launcher{count = Count}) when Count =< 0 ->
+launcher({launch}, State=#launcher_http{count = Count}) when Count =< 0 ->
     {stop, normal, State};
-launcher({launch}, State=#launcher{intensity = Intensity,
-                                   count = Count,
-                                   dest = DestList,
-                                   interval = Interval,
-                                   start_time = StartTime,
-                                   content = Content,
-                                   fraction = Frac,
-                                   round = Round,
-                                   nth = Nth}) ->
+launcher({launch}, State=#launcher_http{
+                                    ip = IP,
+                                    intensity = Intensity,
+                                    count = Count,
+                                    dest = DestList,
+                                    interval = Interval,
+                                    start_time = StartTime,
+                                    port = Port,
+                                    url = URL,
+                                    req_interval = RInterval,
+                                    fraction = Frac,
+                                    round = Round,
+                                    nth = Nth
+                                    }) ->
     %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
@@ -94,17 +116,17 @@ launcher({launch}, State=#launcher{intensity = Intensity,
             NewIntensity2 = NewIntensity
     end,
     RNum = erlang:min(NewIntensity2, Count),
-    NewNth = do_launch(Content, RNum, DestList, Nth),
-    {next_state, launcher, State#launcher{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
+    NewNth = do_launch_http(Port, URL, RInterval, RNum, DestList, Nth),
+    {next_state, launcher, State#launcher_http{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
-do_launch(_, Num, _, Nth) when Num =< 0 ->
+do_launch_http(_, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
-do_launch(Content, Num, DestList, Nth) ->
+do_launch_http(Port, URL, RInterval, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
-    dctg_client_sup:start_child({DestIP, Content}),
+    dctg_client_sup:start_child({DestIP, Port, URL, RInterval}),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
-    do_launch(Content, Num - 1, DestList, NewNth).
+    do_launch_http(Port, URL, RInterval, Num - 1, DestList, NewNth).
 
 handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.

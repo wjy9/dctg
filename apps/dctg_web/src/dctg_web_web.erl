@@ -24,16 +24,49 @@ loop(Req, DocRoot) ->
     "/" ++ Path = Req:get(path),
     try
         case Req:get(method) of
-            Method when Method =:= 'GET'; Method =:= 'HEAD' ->
+            Method when Method =:= 'GET' ->
                 case Path of
-                    _ ->
-                        Req:serve_file(Path, DocRoot)
+                    "start" ->
+                        dctg_controller:start_launchers(),
+                        Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
+                    "stop" ->
+                        dctg_controller:stop(),
+                        Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
+                    "status" ->
+                        Status = dctg_controller:status(),
+                        Req:respond({200, [{"Content-Type", "text/plain"}], atom_to_list(Status)})
                 end;
             'POST' ->
-                case Path of
-                    _ ->
-                        Req:not_found()
-                end;
+                Body = Req:recv_body(),
+                Json = mochijson2:decode(Body),
+                {struct, JsonBody} = Json,
+                BiHostList = proplists:get_value(<<"hosts">>, JsonBody),
+                {struct, IPs} = proplists:get_value(<<"ips">>, JsonBody),
+                Fun = fun(I, AccI) -> mapfoldfun(I, AccI, IPs) end,
+                {HostList, IPPropList} = lists:mapfoldl(Fun, [], BiHostList),
+                LauncherNum = calc_length(IPPropList),
+
+                dctg_frontend:total(LauncherNum),
+                dctg_frontend:set_hostip(HostList, IPPropList),
+
+                DutStartIP = binary_to_list(proplists:get_value(<<"durstartip">>, JsonBody)),
+                DutNum = proplists:get_value(<<"dutnum">>, JsonBody),
+                Intensity = proplists:get_value(<<"intensity">>, JsonBody),
+                Connection = proplists:get_value(<<"connection">>, JsonBody),
+                BiType = proplists:get_value(<<"type">>, JsonBody),
+                Type = binary_to_atom(BiType, utf8),
+                {struct, Content} = proplists:get_value(BiType, JsonBody),
+                case Type of
+                    http ->
+                        Port = 80,
+                        %Port = proplists:get_value(<<"port">>, JsonBody),
+                        URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
+                        Interval = proplists:get_value(<<"interval">>, Content),
+                        dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
+                    Else ->
+                        ok
+                end,
+                Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
             _ ->
                 Req:respond({501, [], []})
         end
@@ -48,6 +81,22 @@ loop(Req, DocRoot) ->
             Req:respond({500, [{"Content-Type", "text/plain"}],
                          "request failed, sorry\n"})
     end.
+
+mapfoldfun(Item, AccIn, IPs) ->
+    Item2 = binary_to_atom(Item, utf8),
+    List = getiplist(Item, IPs),
+    PropList = [{Item2, List}],
+    AccOut = lists:append(AccIn, PropList),
+    {Item2, AccOut}.
+getiplist(BiHostName, IPs) ->
+    BiIPList = proplists:get_value(BiHostName, IPs),
+    lists:map(fun(I) -> binary_to_list(I) end, BiIPList).
+
+foldfun({_, List}, In) ->
+    In + length(List).
+calc_length(IPPropList) ->
+    Fun = fun(I, In) -> foldfun(I, In) end,
+    lists:foldl(Fun, 0, IPPropList).
 
 %% Internal API
 

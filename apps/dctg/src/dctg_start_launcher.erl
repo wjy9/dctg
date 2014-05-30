@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, newbeams/1, launch_start/0, stop/0]).
+-export([start_link/0, newbeams/0, launch_start/0, stop/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -define(START_DELAY, 2).
@@ -10,8 +10,8 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-newbeams(HostList) ->
-    gen_server:cast(?MODULE, {newbeams, HostList}).
+newbeams() ->
+    gen_server:cast(?MODULE, {newbeams}).
 
 launch_start() ->
     gen_server:cast(?MODULE, {launch_start}).
@@ -22,7 +22,8 @@ stop() ->
 init([]) ->
     {ok, ok}.
 
-handle_cast({newbeams, HostList}, _State) ->
+handle_cast({newbeams}, _State) ->
+    HostList = dctg_config_server:get_hostlist(),
     SysArgs = "-rsh ssh -detached -hidden -smp disable +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
     {ok, PAList} = init:get_argument(pa),
