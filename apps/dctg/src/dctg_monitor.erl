@@ -26,6 +26,13 @@ stop() ->
 
 init([]) ->
     %error_logger:info_msg("WJY: monitor init~n"),
+    emysql:add_pool(mysql, [
+    {size, 1},
+    {user, "dctg"},
+    {password, "dctg"},
+    {database, "dctg"},
+    {encoding, utf8}
+    ]),
     {ok, wait, #state{}}.
 
 wait({set_launchernum, Num}, State) ->
@@ -60,6 +67,12 @@ stat_update(Array, Time, State) ->
     {C, R, TC, TR} = array:foldl(Fun, {0, 0, 0, 0}, Array),
     %WJYTODO: should write result to mysql
     error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [Time, C, R, TC, TR]),
+    BId = list_to_binary(integer_to_list(Time)),
+    Bc = list_to_binary(integer_to_list(C)),
+    Br = list_to_binary(integer_to_list(R)),
+    Btc = list_to_binary(integer_to_list(TC)),
+    Btr = list_to_binary(integer_to_list(TR)),
+    emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>),
     Num = State#state.lau_num,
     NewArr = array:new(Num),
     {next_state, run, State#state{count = 0, stat_arr = NewArr, cur_time = Time + 1}}.
