@@ -25,6 +25,7 @@ loop(Req, DocRoot) ->
     try
         case Req:get(method) of
             Method when Method =:= 'GET'; Method =:= 'HEAD' ->
+                error_logger:info_msg("WJY: GET: ~p~n", [Req:dump()]),
                 case Path of
                     "start" ->
                         dctg_controller:start_launchers(),
@@ -42,6 +43,7 @@ loop(Req, DocRoot) ->
                 Body = Req:recv_body(),
                 Json = mochijson2:decode(Body),
                 {struct, JsonBody} = Json,
+                error_logger:info_msg("WJY: POST: ~p~n", [JsonBody]),
                 BiHostList = proplists:get_value(<<"hosts">>, JsonBody),
                 {struct, IPs} = proplists:get_value(<<"ips">>, JsonBody),
                 Fun = fun(I, AccI) -> mapfoldfun(I, AccI, IPs) end,
@@ -52,9 +54,11 @@ loop(Req, DocRoot) ->
                 dctg_frontend:set_hostip(HostList, IPPropList),
 
                 DutStartIP = binary_to_list(proplists:get_value(<<"dutstartip">>, JsonBody)),
-                DutNum = proplists:get_value(<<"dutnum">>, JsonBody),
-                Intensity = proplists:get_value(<<"intensity">>, JsonBody),
-                Connection = proplists:get_value(<<"connection">>, JsonBody),
+                error_logger:info_msg("WJY: b to int!!!!!!!!!!!!!!!!!!!!!!!~n"),
+                DutNum = erlang:binary_to_integer(proplists:get_value(<<"dutnum">>, JsonBody)),
+                Intensity = erlang:binary_to_integer(proplists:get_value(<<"intensity">>, JsonBody)),
+                Connection = erlang:binary_to_integer(proplists:get_value(<<"connection">>, JsonBody)),
+                error_logger:info_msg("WJY: POST: ~p ~p ~p~n", [DutNum, Intensity, Connection]),
                 BiType = proplists:get_value(<<"type">>, JsonBody),
                 Type = binary_to_atom(BiType, utf8),
                 {struct, Content} = proplists:get_value(BiType, JsonBody),
@@ -63,7 +67,7 @@ loop(Req, DocRoot) ->
                         Port = 80,
                         %Port = proplists:get_value(<<"port">>, JsonBody),
                         URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
-                        Interval = proplists:get_value(<<"interval">>, Content),
+                        Interval = erlang:binary_to_integer(proplists:get_value(<<"interval">>, Content)),
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
                     _Else ->
                         ok
