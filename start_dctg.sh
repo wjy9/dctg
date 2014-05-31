@@ -1,8 +1,8 @@
-erl -setcookie test -sname controller@testercontrollerexp
--pa /home/ubuntu/dctg/apps/dctg/ebin/
--pa /home/ubuntu/dctg/apps/dctg_worker/ebin/
--pa /home/ubuntu/dctg/apps/dctg_web/ebin/
--pa /homt/ubuntu/dctg/deps/mochiweb/ebin/
--s dctg_web
+erl -setcookie test -sname controller@testercontroller \
+-pa /home/ubuntu/dctg/apps/dctg/ebin/ \
+-pa /home/ubuntu/dctg/apps/dctg_worker/ebin/ \
+-pa /home/ubuntu/dctg/apps/dctg_web/ebin/ \
+-pa /home/ubuntu/dctg/deps/mochiweb/ebin/ \
+-s dctg_web \
 -s dctg -rsh ssh
 
