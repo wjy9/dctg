@@ -38,7 +38,11 @@ init([]) ->
 wait({set_launchernum, Num}, State) ->
     %error_logger:info_msg("WJY: monitor set launcher num ~p~n", [Num]),
     Array = array:new(Num),
-    {next_state, run, State#state{lau_num = Num, stat_arr = Array}}.
+    {next_state, run, State#state{lau_num = Num, stat_arr = Array}};
+
+wait({stat, ID, TimeStamp, Stat}, State) ->
+    error_logger:info_msg("WJY: monitor: stat received after finish: ~p, ~p, ~p ~n", [ID, TimeStamp, Stat]),
+    {next_state, wait, State}.
 
 run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count = Count, stat_arr = Array, cur_time = CurTime}) ->
     if
