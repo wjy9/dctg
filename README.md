@@ -3,17 +3,16 @@
 ## compile
 
 ```
-./rebar compile
+./rebar get-deps compile
 ```
 
 ## run
 
 ```
-erl -setcookie xxx -sname xxx@localhost -pa apps/dctg/ebin -pa apps/dctg_worker/ebin -s dctg -rsh ssh
+./start_dctg.sh
 ```
 
-then in the erl shell:
-
-```erlang
-dctg_test:run().
+then
+```
+./curl_command.sh
 ```
