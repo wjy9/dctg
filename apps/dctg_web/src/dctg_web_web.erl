@@ -35,7 +35,7 @@ loop(Req, DocRoot) ->
                         Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
                     "status" ->
                         Status = dctg_controller:status(),
-                        Req:respond({200, [{"Content-Type", "text/plain"}], atom_to_list(Status)});
+                        Req:respond({200, [{"Content-Type", "text/plain"}, {"Access-Control-Allow-Origin", "*"}], atom_to_list(Status)});
                     _ ->
                         Req:serve_file(Path, DocRoot)
                 end;
