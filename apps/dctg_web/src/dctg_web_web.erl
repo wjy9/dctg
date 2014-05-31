@@ -55,9 +55,9 @@ loop(Req, DocRoot) ->
 
                 DutStartIP = binary_to_list(proplists:get_value(<<"dutstartip">>, JsonBody)),
                 error_logger:info_msg("WJY: b to int!!!!!!!!!!!!!!!!!!!!!!!~n"),
-                DutNum = erlang:binary_to_integer(proplists:get_value(<<"dutnum">>, JsonBody)),
-                Intensity = erlang:binary_to_integer(proplists:get_value(<<"intensity">>, JsonBody)),
-                Connection = erlang:binary_to_integer(proplists:get_value(<<"connection">>, JsonBody)),
+                DutNum = binary_to_integer(proplists:get_value(<<"dutnum">>, JsonBody)),
+                Intensity = binary_to_integer(proplists:get_value(<<"intensity">>, JsonBody)),
+                Connection = binary_to_integer(proplists:get_value(<<"connection">>, JsonBody)),
                 error_logger:info_msg("WJY: POST: ~p ~p ~p~n", [DutNum, Intensity, Connection]),
                 BiType = proplists:get_value(<<"type">>, JsonBody),
                 Type = binary_to_atom(BiType, utf8),
@@ -67,7 +67,7 @@ loop(Req, DocRoot) ->
                         Port = 80,
                         %Port = proplists:get_value(<<"port">>, JsonBody),
                         URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
-                        Interval = erlang:binary_to_integer(proplists:get_value(<<"interval">>, Content)),
+                        Interval = binary_to_integer(proplists:get_value(<<"interval">>, Content)),
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
                     _Else ->
                         ok
