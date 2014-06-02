@@ -42,7 +42,7 @@ connect(DestIP, Port) ->
             Sock;
         {error, Reason} ->
             error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
-            undefine
+            exit(failed)
     end.
 send(Sock, URL) ->
     Cont = "GET " ++ URL ++ " HTTP/1.0\r\n\r\n",
