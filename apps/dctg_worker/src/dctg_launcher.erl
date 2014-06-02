@@ -103,7 +103,13 @@ launcher({launch}, State=#launcher_http{
     %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
-    Timer = TimePast + Interval * (Round + 1),
+    Timer = case TimePast + Interval * (Round + 1) of
+                Num when Num < 0 ->
+                    error_logger:info_msg("WJY: launcher: too high load!~n"),
+                    0;
+                Else ->
+                    Else
+            end,
     gen_fsm:send_event_after(erlang:round(Timer), {launch}),
     NewIntensity = erlang:trunc(Intensity),
     NewFrac = Frac + Intensity - NewIntensity,
