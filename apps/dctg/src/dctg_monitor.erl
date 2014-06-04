@@ -50,7 +50,7 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
                                             cur_time = CurTime,
                                             aggstat_arr = AggArr}) ->
     case array:get(TimeStamp, StatArr) of
-        undefine ->
+        undefined ->
             Array = array:new(Lau),
             Array2 = array:set(ID, Stat, Array),
             Count = 1,
@@ -96,7 +96,7 @@ foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
 
 write_sql(AggArr, CurTime) ->
     case array:get(CurTime, AggArr) of
-        undefine ->
+        undefined ->
             CurTime;
         {C, R, TC, TR} ->
             error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [CurTime, C, R, TC, TR]),

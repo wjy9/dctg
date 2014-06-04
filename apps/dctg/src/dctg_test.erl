@@ -15,8 +15,8 @@ run() ->
 
     LauncherNum = 3,
     Port = 80, % WJYTODO: not implemented
-    Content = "/index.html", % WJYTODO: not implemented
-    Interval = 60, % WJYTODO: not implemented
+    Content = "/a.html", % WJYTODO: not implemented
+    Interval = 0, % WJYTODO: not implemented
     dctg_frontend:set_hostip(Hosts, IPPropList),
     dctg_frontend:total(LauncherNum),
     dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, ConnCount, LauncherNum, Port, Content, Interval),
