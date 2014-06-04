@@ -110,7 +110,7 @@ write_sql(AggArr, CurTime) ->
     
 handle_event({stop}, _, _State) ->
     error_logger:info_msg("WJY: monitor stop~n"),
-    {next_state, wait, #state{}}.
+    {next_state, wait, #state{stat_arr = array:new(), count_arr = array:new(), aggstat_arr = array:new()}}.
 
 handle_sync_event(_, _, StateName, State) ->
     {next_state, StateName, State}.
