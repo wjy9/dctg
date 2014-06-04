@@ -7,7 +7,7 @@
 
 -record(state, {
     lau_num,
-    count_array,
+    count_arr,
     stat_arr,
     cur_time = 0,
     aggstat_arr
@@ -92,10 +92,10 @@ stat_update(Array, Time, State, AggArr) ->
     array:set(Time, {C, R, TC, TR}, AggArr).
 
 foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
-    {Ac1 + C, Ac2 + R, Ac3 + TSC, Ac4 + TR}.
+    {Ac1 + C, Ac2 + R, Ac3 + TC, Ac4 + TR}.
 
 write_sql(AggArr, CurTime) ->
-    case array:get(Curtime, AggArr) of
+    case array:get(CurTime, AggArr) of
         undefine ->
             CurTime;
         {C, R, TC, TR} ->
