@@ -7,7 +7,7 @@
 
 -record(state, {
     lau_num,
-    count = 0,
+    count_array,
     stat_arr,
     cur_time = 0
     }).
@@ -33,56 +33,68 @@ init([]) ->
     {database, "dctg"},
     {encoding, utf8}
     ]),
-    {ok, wait, #state{}}.
+    {ok, wait, #state{stat_arr = array:new(), count_arr = array:new()}}.
 
 wait({set_launchernum, Num}, State) ->
     %error_logger:info_msg("WJY: monitor set launcher num ~p~n", [Num]),
-    Array = array:new(Num),
-    {next_state, run, State#state{lau_num = Num, stat_arr = Array}};
+    {next_state, run, State#state{lau_num = Num}};
 
 wait({stat, ID, TimeStamp, Stat}, State) ->
     error_logger:info_msg("WJY: monitor: stat received after finish: ~p, ~p, ~p ~n", [ID, TimeStamp, Stat]),
     {next_state, wait, State}.
 
-run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count = Count, stat_arr = Array, cur_time = CurTime}) ->
-    if
-        TimeStamp == CurTime ->
+run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count_arr = CountArr, stat_arr = StatArr, cur_time = CurTime}) ->
+    case array:get(TimeStamp, StatArr) of
+        undefine ->
+            Array = array:new(Lau),
+            Array2 = array:set(ID, Stat, Array),
+            Count = 1,
+            CountArr2 = array:set(TimeStamp, Count, CountArr),
+            StatArr2 = array:set(TimeStamp, Array2, StatArr),
+            if
+                Count >= Lau ->
+                    stat_update(Array2, TimeStamp, State);
+                true ->
+                    {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2}}
+            end;
+        Array->
             case array:get(ID, Array) of
                 undefined ->
                     Array2 = array:set(ID, Stat, Array),
+                    Count = array:get(TimeStamp, CountArr),
                     Count2 = Count + 1,
+                    CountArr2 = array:set(TimeStamp, Count2, CountArr),
+                    StatArr2 = array:set(TimeStamp, Array2, StatArr),
                     if
                         Count2 >= Lau ->
                             stat_update(Array2, TimeStamp, State);
                         true ->
-                            {next_state, run, State#state{count = Count2, stat_arr = Array2}}
+                            {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2}}
                     end;
                 _Value ->
                     error_logger:info_msg("WJY: Error! ID duplicated! ~p~n", [{ID, TimeStamp}]),
                     {next_state, run, State}
-            end;
-        true ->
-            error_logger:info_msg("WJY: Error! TimeStamp not consist id: ~p TimeStamp: ~p cur time: ~p~n", [ID, TimeStamp, CurTime]),
-            {next_state, run, State}
+            end
     end.
 
 stat_update(Array, Time, State) ->
     Fun = fun(_I, A, B) -> foldfun(A, B) end,
     {C, R, TC, TR} = array:foldl(Fun, {0, 0, 0, 0}, Array),
-    %WJYTODO: should write result to mysql
+    Num = State#state.lau_num,
+    NewArr = array:new(Num),
+    {next_state, run, State#state{count = 0, stat_arr = NewArr, cur_time = Time + 1}}.
+
+foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
+    {Ac1 + C, Ac2 + R, Ac3 + TSC, Ac4 + TR}.
+
+write_sql() ->
     error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [Time, C, R, TC, TR]),
     BId = list_to_binary(integer_to_list(Time)),
     Bc = list_to_binary(integer_to_list(C)),
     Br = list_to_binary(integer_to_list(R)),
     Btc = list_to_binary(integer_to_list(TC)),
     Btr = list_to_binary(integer_to_list(TR)),
-    emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>),
-    Num = State#state.lau_num,
-    NewArr = array:new(Num),
-    {next_state, run, State#state{count = 0, stat_arr = NewArr, cur_time = Time + 1}}.
-
-foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
-    {Ac1 + C, Ac2 + R, Ac3 + TC, Ac4 + TR}.
+    emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>).
 
 handle_event({stop}, _, _State) ->
     error_logger:info_msg("WJY: monitor stop~n"),
