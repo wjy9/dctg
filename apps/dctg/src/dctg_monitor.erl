@@ -9,7 +9,8 @@
     lau_num,
     count_array,
     stat_arr,
-    cur_time = 0
+    cur_time = 0,
+    aggstat_arr
     }).
 
 start_link() ->
@@ -33,7 +34,7 @@ init([]) ->
     {database, "dctg"},
     {encoding, utf8}
     ]),
-    {ok, wait, #state{stat_arr = array:new(), count_arr = array:new()}}.
+    {ok, wait, #state{stat_arr = array:new(), count_arr = array:new(), aggstat_arr = array:new()}}.
 
 wait({set_launchernum, Num}, State) ->
     %error_logger:info_msg("WJY: monitor set launcher num ~p~n", [Num]),
@@ -43,7 +44,11 @@ wait({stat, ID, TimeStamp, Stat}, State) ->
     error_logger:info_msg("WJY: monitor: stat received after finish: ~p, ~p, ~p ~n", [ID, TimeStamp, Stat]),
     {next_state, wait, State}.
 
-run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count_arr = CountArr, stat_arr = StatArr, cur_time = CurTime}) ->
+run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
+                                            count_arr = CountArr,
+                                            stat_arr = StatArr,
+                                            cur_time = CurTime,
+                                            aggstat_arr = AggArr}) ->
     case array:get(TimeStamp, StatArr) of
         undefine ->
             Array = array:new(Lau),
@@ -53,7 +58,9 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count_arr = Count
             StatArr2 = array:set(TimeStamp, Array2, StatArr),
             if
                 Count >= Lau ->
-                    stat_update(Array2, TimeStamp, State);
+                    AggArr2 = stat_update(Array2, TimeStamp, State, AggArr),
+                    CurTime2 = write_sql(AggArr2, CurTime),
+                    {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2, aggstat_arr = AggArr2, cur_time = CurTime2}};
                 true ->
                     {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2}}
             end;
@@ -67,7 +74,9 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count_arr = Count
                     StatArr2 = array:set(TimeStamp, Array2, StatArr),
                     if
                         Count2 >= Lau ->
-                            stat_update(Array2, TimeStamp, State);
+                            AggArr2 =  stat_update(Array2, TimeStamp, State, AggArr),
+                            CurTime2 = write_sql(AggArr2, CurTime),
+                            {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2, aggstat_arr = AggArr2, cur_time = CurTime2}};
                         true ->
                             {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2}}
                     end;
@@ -77,25 +86,28 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau, count_arr = Count
             end
     end.
 
-stat_update(Array, Time, State) ->
+stat_update(Array, Time, State, AggArr) ->
     Fun = fun(_I, A, B) -> foldfun(A, B) end,
     {C, R, TC, TR} = array:foldl(Fun, {0, 0, 0, 0}, Array),
-    Num = State#state.lau_num,
-    NewArr = array:new(Num),
-    {next_state, run, State#state{count = 0, stat_arr = NewArr, cur_time = Time + 1}}.
+    array:set(Time, {C, R, TC, TR}, AggArr).
 
 foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
     {Ac1 + C, Ac2 + R, Ac3 + TSC, Ac4 + TR}.
 
-write_sql() ->
-    error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [Time, C, R, TC, TR]),
-    BId = list_to_binary(integer_to_list(Time)),
-    Bc = list_to_binary(integer_to_list(C)),
-    Br = list_to_binary(integer_to_list(R)),
-    Btc = list_to_binary(integer_to_list(TC)),
-    Btr = list_to_binary(integer_to_list(TR)),
-    emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>).
-
+write_sql(AggArr, CurTime) ->
+    case array:get(Curtime, AggArr) of
+        undefine ->
+            CurTime;
+        {C, R, TC, TR} ->
+            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [CurTime, C, R, TC, TR]),
+            Bc = list_to_binary(integer_to_list(C)),
+            Br = list_to_binary(integer_to_list(R)),
+            Btc = list_to_binary(integer_to_list(TC)),
+            Btr = list_to_binary(integer_to_list(TR)),
+            emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>),
+            write_sql(AggArr, CurTime + 1)
+    end.
+    
 handle_event({stop}, _, _State) ->
     error_logger:info_msg("WJY: monitor stop~n"),
     {next_state, wait, #state{}}.
