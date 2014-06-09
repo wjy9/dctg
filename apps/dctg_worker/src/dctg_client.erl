@@ -23,7 +23,7 @@ tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
             case Interval of
                 0 ->
                     send(NewSock, URL),
-                    {stop, normal, ok};
+                    {next_state, waitrecv, ok};
                 _ ->
                     send(NewSock, URL),
                     gen_fsm:send_event_after(Interval, timeout),
@@ -35,6 +35,8 @@ tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
             gen_fsm:send_event_after(Interval, timeout),
             {next_state, tcpconn, {DestIP, Port, URL, Interval, Sock}}
     end.
+
+waitrecv() ->
 
 connect(SrcIP, DestIP, Port) ->
     case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
