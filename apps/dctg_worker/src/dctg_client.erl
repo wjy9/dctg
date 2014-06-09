@@ -5,6 +5,7 @@
 -export([start/1]).
 
 -export([init/1, handle_event/3, handle_sync_event/4, tcpconn/2,
+        waitrecv/2,
         handle_info/3, terminate/3, code_change/4]).
 
 -include("dctg_record.hrl").
@@ -23,7 +24,7 @@ tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
             case Interval of
                 0 ->
                     send(NewSock, URL),
-                    {next_state, waitrecv, ok};
+                    {next_state, waitrecv, NewSock};
                 _ ->
                     send(NewSock, URL),
                     gen_fsm:send_event_after(Interval, timeout),
@@ -36,7 +37,8 @@ tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
             {next_state, tcpconn, {DestIP, Port, URL, Interval, Sock}}
     end.
 
-waitrecv() ->
+waitrecv(_, State) ->
+    {next_state, waitrecv, State}.
 
 connect(SrcIP, DestIP, Port) ->
     case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
@@ -65,6 +67,9 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
+handle_info(Info, waitrecv, Sock) ->
+    gen_tcp:close(Sock),
+    {stop, normal, ok};
 handle_info(_Info, StateName, State) ->
     %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     {next_state, StateName, State}.
