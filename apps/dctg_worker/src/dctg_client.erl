@@ -24,14 +24,14 @@ tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
                 0 ->
                     send(NewSock, URL),
                     {stop, normal, ok};
-                Num ->
+                _ ->
                     send(NewSock, URL),
                     gen_fsm:send_event_after(Interval, timeout),
                     {next_state, tcpconn, {DestIP, Port, URL, Interval, NewSock}}
             end;
         _ ->
             send(Sock, URL),
-            inet:setopts(NewSock, [{active, once}]), % WJYTODO
+            inet:setopts(Sock, [{active, once}]), % WJYTODO
             gen_fsm:send_event_after(Interval, timeout),
             {next_state, tcpconn, {DestIP, Port, URL, Interval, Sock}}
     end.
