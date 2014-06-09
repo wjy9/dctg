@@ -55,7 +55,7 @@ send(Sock, URL) ->
             dctg_stat_cache:put(request, 1);
         {error, Reason} ->
             error_logger:info_msg("WJY: client tcp send fail ~p~n", [Reason])
-    end,
+    end.
 
 handle_event(_Ev, StateName, State) ->
     {next_state, StateName, State}.
