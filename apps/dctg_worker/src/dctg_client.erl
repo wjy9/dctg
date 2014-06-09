@@ -13,13 +13,13 @@ start(Args) ->
     %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
-init({DestIP, Port, URL, Interval}) ->
-    {ok, tcpconn, {DestIP, Port, URL, Interval, undefine}, 0}.
+init({SrcIP, DestIP, Port, URL, Interval}) ->
+    {ok, tcpconn, {SrcIP, DestIP, Port, URL, Interval, undefine}, 0}.
 
-tcpconn(timeout, {DestIP, Port, URL, Interval, Sock}) ->
+tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
     case Sock of
         undefine ->
-            NewSock = connect(DestIP, Port),
+            NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
                     send(NewSock, URL),
@@ -31,12 +31,16 @@ tcpconn(timeout, {DestIP, Port, URL, Interval, Sock}) ->
             end;
         _ ->
             send(Sock, URL),
+            inet:setopts(NewSock, [{active, once}]), % WJYTODO
             gen_fsm:send_event_after(Interval, timeout),
             {next_state, tcpconn, {DestIP, Port, URL, Interval, Sock}}
     end.
 
-connect(DestIP, Port) ->
-    case gen_tcp:connect(DestIP, Port, []) of
+connect(SrcIP, DestIP, Port) ->
+    case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
+                                        {active, once},
+                                        {keepalive, true} % WJYTODO
+                                        ]) of
         {ok, Sock} ->
             dctg_stat_cache:put(connect, 1),
             Sock;
@@ -45,9 +49,13 @@ connect(DestIP, Port) ->
             exit(failed)
     end.
 send(Sock, URL) ->
-    Cont = "GET " ++ URL ++ " HTTP/1.0\r\n\r\n",
-    gen_tcp:send(Sock, Cont),
-    dctg_stat_cache:put(request, 1).
+    Cont = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
+    case gen_tcp:send(Sock, Cont) of
+        ok ->
+            dctg_stat_cache:put(request, 1);
+        {error, Reason} ->
+            error_logger:info_msg("WJY: client tcp send fail ~p~n", [Reason])
+    end,
 
 handle_event(_Ev, StateName, State) ->
     {next_state, StateName, State}.

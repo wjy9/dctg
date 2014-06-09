@@ -122,17 +122,17 @@ launcher({launch}, State=#launcher_http{
             NewIntensity2 = NewIntensity
     end,
     RNum = erlang:min(NewIntensity2, Count),
-    NewNth = do_launch_http(Port, URL, RInterval, RNum, DestList, Nth),
+    NewNth = do_launch_http(IP, Port, URL, RInterval, RNum, DestList, Nth),
     {next_state, launcher, State#launcher_http{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
-do_launch_http(_, _, _, Num, _, Nth) when Num =< 0 ->
+do_launch_http(_, _, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
-do_launch_http(Port, URL, RInterval, Num, DestList, Nth) ->
+do_launch_http(SrcIP, Port, URL, RInterval, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
-    dctg_client_sup:start_child({DestIP, Port, URL, RInterval}),
+    dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval}),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
-    do_launch_http(Port, URL, RInterval, Num - 1, DestList, NewNth).
+    do_launch_http(SrcIP, Port, URL, RInterval, Num - 1, DestList, NewNth).
 
 handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.
