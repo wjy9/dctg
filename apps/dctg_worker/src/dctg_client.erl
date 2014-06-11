@@ -63,7 +63,7 @@ connect(SrcIP, DestIP, Port) ->
     %                                     {active, 10},
     %                                     {keepalive, true} % WJYTODO
     %                                     ]) of
-    case gen_tcp:connect(DestIP, Port, []) of
+    case gen_tcp:connect(DestIP, Port, [{ip, SrcIP}]) of
         {ok, Sock} ->
             dctg_stat_cache:put(connect, 1),
             Sock;
