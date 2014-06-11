@@ -59,10 +59,11 @@ waitrecv(_, State) ->
 
 connect(SrcIP, DestIP, Port) ->
     error_logger:info_msg("src ~p, dst ~p, port ~p~n", [SrcIP, DestIP, Port]),
-    case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
-                                        {active, 10},
-                                        {keepalive, true} % WJYTODO
-                                        ]) of
+    % case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
+    %                                     {active, 10},
+    %                                     {keepalive, true} % WJYTODO
+    %                                     ]) of
+    case gen_tcp:connect(DestIP, Port, []) of
         {ok, Sock} ->
             dctg_stat_cache:put(connect, 1),
             Sock;
