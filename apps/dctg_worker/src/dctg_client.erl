@@ -10,31 +10,48 @@
 
 -include("dctg_record.hrl").
 
+-record(state, {
+    src,
+    dst,
+    port,
+    url,
+    interval,
+    sock,
+    recv_count
+    }).
+
 start(Args) ->
     %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
 init({SrcIP, DestIP, Port, URL, Interval}) ->
-    {ok, tcpconn, {SrcIP, DestIP, Port, URL, Interval, undefine}, 0}.
+    {ok, tcpconn, #state{src = SrcIP, dst = DestIP,
+                        port = Port, url = URL,
+                        interval = Interval, recv_count = 0}, 0}.
 
-tcpconn(timeout, {SrcIP, DestIP, Port, URL, Interval, Sock}) ->
+tcpconn(timeout, State = #state{
+                        src = SrcIP,
+                        dst = DestIP,
+                        port = Port,
+                        url = URL,
+                        interval = Interval,
+                        sock = Sock}) ->
     case Sock of
         undefine ->
             NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
                     send(NewSock, URL),
-                    {next_state, waitrecv, NewSock};
+                    {next_state, waitrecv, State#state{sock = NewSock}};
                 _ ->
                     send(NewSock, URL),
                     gen_fsm:send_event_after(Interval, timeout),
-                    {next_state, tcpconn, {DestIP, Port, URL, Interval, NewSock}}
+                    {next_state, tcpconn, State#state{sock = NewSock}}
             end;
         _ ->
             send(Sock, URL),
-            inet:setopts(Sock, [{active, once}]), % WJYTODO
             gen_fsm:send_event_after(Interval, timeout),
-            {next_state, tcpconn, {DestIP, Port, URL, Interval, Sock}}
+            {next_state, tcpconn, State}
     end.
 
 waitrecv(_, State) ->
@@ -42,7 +59,7 @@ waitrecv(_, State) ->
 
 connect(SrcIP, DestIP, Port) ->
     case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
-                                        {active, once},
+                                        {active, 10},
                                         {keepalive, true} % WJYTODO
                                         ]) of
         {ok, Sock} ->
@@ -67,12 +84,18 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
-handle_info(Info, waitrecv, Sock) ->
+handle_info(_Info, waitrecv, #state{sock = Sock}) ->
     gen_tcp:close(Sock),
     {stop, normal, ok};
-handle_info(_Info, StateName, State) ->
-    error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
-    {next_state, StateName, State}.
+handle_info(_Info, StateName, State = #state{sock = Sock, recv_count = Count}) ->
+    %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
+    if
+        Count >= 9 ->
+            inet:setopts(Sock, [{active, 10}]);
+        true ->
+            ok
+    end,
+    {next_state, StateName, State#state{recv_count = Count + 1}}.
 
 terminate(_Reason, _StateName, _State) ->
     ok.
