@@ -21,7 +21,7 @@ finish() ->
     gen_server:cast(?MODULE, {finish}).
 
 init([]) ->
-    error_logger:info_msg("WJY: controller init~n"),
+    %error_logger:info_msg("WJY: controller init~n"),
     {ok, wait}.
 
 handle_call({start_launchers}, _From, _State) ->

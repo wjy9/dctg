@@ -90,7 +90,7 @@ handle_cast({set_launcher_per_ip, Num}, State =
     {noreply, State#state{total = NewTotal, hostlist = NewHostList, iparray = NewIPArray}};
 
 handle_cast({init_fin}, State = #state{launcher = Count, total = Num}) ->
-    error_logger:info_msg("WJY: config server init fin received~n"),
+    %error_logger:info_msg("WJY: config server init fin received~n"),
     if
         Count + 1 >= Num ->
             %error_logger:info_msg("WJY: enough~n"),

@@ -14,6 +14,7 @@ set_hostip(HostList, IPPropList) ->
     NewHost = lists:flatten(Hosts),
     IPList = lists:map(fun(IP) -> ipstring_to_tuple(IP) end, IPList1),
     IPArray = array:from_list(IPList),
+    %error_logger:info_msg("frontend: ~p, ~p~n", [NewHost, IPArray]),
     dctg_config_server:set_hostip(NewHost, IPArray).
 
 mapfoldfun(H, AccIn, IPPropList) ->

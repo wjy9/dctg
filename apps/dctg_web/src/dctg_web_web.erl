@@ -54,11 +54,10 @@ loop(Req, DocRoot) ->
                 dctg_frontend:set_hostip(HostList, IPPropList),
 
                 DutStartIP = binary_to_list(proplists:get_value(<<"dutstartip">>, JsonBody)),
-                error_logger:info_msg("WJY: b to int!!!!!!!!!!!!!!!!!!!!!!!~n"),
                 DutNum = binary_to_integer(proplists:get_value(<<"dutnum">>, JsonBody)),
                 Intensity = binary_to_integer(proplists:get_value(<<"intensity">>, JsonBody)),
                 Connection = binary_to_integer(proplists:get_value(<<"connection">>, JsonBody)),
-                error_logger:info_msg("WJY: POST: ~p ~p ~p~n", [DutNum, Intensity, Connection]),
+                %error_logger:info_msg("WJY: POST: ~p ~p ~p~n", [DutNum, Intensity, Connection]),
                 BiType = proplists:get_value(<<"type">>, JsonBody),
                 Type = binary_to_atom(BiType, utf8),
                 {struct, Content} = proplists:get_value(BiType, JsonBody),
