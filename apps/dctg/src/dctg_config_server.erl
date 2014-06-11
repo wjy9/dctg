@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0, get_config/2, set_hostip/2,
-        set_total/1, set_config/1, stop/0,
+        set_total/1, set_config/2, stop/0,
         set_launcher_per_ip/1,
         init_fin/1, finish/1, get_hostlist/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -81,7 +81,7 @@ handle_cast({set_hostip, HostList, IPArray}, State)
     end;
 
 handle_cast({set_launcher_per_ip, Num}, State =
-    #state{total = Total, hostlist = HostList, iparray = IPArray) ->
+    #state{total = Total, hostlist = HostList, iparray = IPArray}) ->
     NewTotal = Total * Num,
     NewHostList = lists:flatten(lists:map(fun(H) -> lists:duplicate(Num, H) end, HostList)),
     IPList = array:to_list(IPArray),
