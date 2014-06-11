@@ -71,7 +71,7 @@ handle_info(Info, waitrecv, Sock) ->
     gen_tcp:close(Sock),
     {stop, normal, ok};
 handle_info(_Info, StateName, State) ->
-    %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
+    error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, _State) ->

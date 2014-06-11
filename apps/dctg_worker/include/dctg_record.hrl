@@ -28,7 +28,6 @@
     dutlist, % ip list of dut
     type, % type of test, should be raw or http
     intensity, % tcp conn per ms per launcher
-    count, % total number of connections
     protocol % protocol specific config
     }).
 

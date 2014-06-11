@@ -22,10 +22,9 @@ init([]) ->
     ID = utils:get_id(),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ID, ControllerNode) of
-        {Config, IP} when is_record(Config, config) ->
+        {Config, IP, Count} when is_record(Config, config) ->
             Type = Config#config.type,
             Intensity = Config#config.intensity,
-            Count = Config#config.count,
             DestList = Config#config.dutlist,
             Content = Config#config.protocol,
             if

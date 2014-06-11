@@ -44,10 +44,36 @@ config(IP, Num, Type, Intensity, Count, LaunchNum) ->
 
 config(IP, Num, Type, Intensity, Count, LaunchNum, Port, Content, Interval) when Type =:= http ->
     Http = #http{port = Port, content = Content, interval = Interval * 1000},
-    NewIntensity = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
-    NewCount = round(Count / LaunchNum),
+    Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
+    if
+        Intensity2 > 10 ->
+            dctg_config_server:set_launcher_per_ip(3),
+            NewIntensity = Intensity2 / 3,
+            LaunchNum2 = LaunchNum * 3,
+            ok;
+        Intensity2 > 6 ->
+            dctg_config_server:set_launcher_per_ip(2),
+            NewIntensity = Intensity2 / 2,
+            LaunchNum2 = LaunchNum * 2,
+            body;
+        true ->
+            NewIntensity = Intensity2,
+            LaunchNum2 = LaunchNum
+    end,
+    NewCount = trunc(Count / LaunchNum2),
+    CountArr1 = array:new([{size, LaunchNum2}, {fixed, true}, {default, NewCount}]),
+    CountArr = calc_count_array(CountArr1, Count rem LaunchNum2, 0, LaunchNum2),
     IPT = ipstring_to_tuple(IP),
     IPList = make_iplist(IPT, Num),
     IPTuple = list_to_tuple(IPList),
-    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = Type, intensity = NewIntensity, count = NewCount, protocol = Http},
-    dctg_config_server:set_config(Config).
+    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = Type, intensity = NewIntensity, protocol = Http},
+    dctg_config_server:set_config(Config, CountArr).
+
+calc_count_array(Array, Num, _I, _Size) when Num =< 0 ->
+    Array;
+calc_count_array(Array, Num, I, Size) when I >= Size ->
+    calc_count_array(Array, Num, 0, Size);
+calc_count_array(Array, Num, I, Size) ->
+    Value = array:get(I, Array),
+    Array2 = array:set(I, Value + 1, Array),
+    calc_count_array(Array2, Num - 1, I + 1, Size).
