@@ -24,7 +24,7 @@ init([]) ->
 
 handle_cast({newbeams}, _State) ->
     HostList = dctg_config_server:get_hostlist(),
-    SysArgs = "-rsh ssh -detached -hidden -smp auto +stbt db +sub true +Q 200000 +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
+    SysArgs = "-rsh ssh -detached -hidden -smp auto +sbt db +sub true +Q 200000 +P 500000 +K true -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
     {ok, PAList} = init:get_argument(pa),
     PA = lists:flatten(lists:flatmap(fun(A) -> [" -pa "] ++ A end, PAList)),
