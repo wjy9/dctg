@@ -10,8 +10,9 @@ total(Num) ->
 
 set_hostip(HostList, IPPropList) ->
     Fun = fun(Host, AccIn) -> mapfoldfun(Host, AccIn, IPPropList) end,
-    {Hosts, IPList} = lists:mapfoldl(Fun, [], HostList),
+    {Hosts, IPList1} = lists:mapfoldl(Fun, [], HostList),
     NewHost = lists:flatten(Hosts),
+    IPList = lists:map(fun(IP) -> ipstring_to_tuple(IP) end, IPList1),
     IPArray = array:from_list(IPList),
     dctg_config_server:set_hostip(NewHost, IPArray).
 
