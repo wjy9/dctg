@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, config/6, config/9, set_hostip/2]).
+-export([total/1, config/9, set_hostip/2]).
 
 -include("config.hrl").
 
@@ -30,17 +30,8 @@ make_iplist({IP1, IP2, IP3, IP4}, Num) ->
     make_iplist([{IP1, IP2, IP3, IP4}], Num - 1);
 make_iplist(List, 0) ->
     lists:reverse(List);
-make_iplist(List = [{IP1, IP2, IP3, IP4} | Tail], Num) ->
+make_iplist(List = [{IP1, IP2, IP3, IP4} | _Tail], Num) ->
     make_iplist([{IP1, IP2, IP3, IP4 + 1} | List], Num - 1).
-
-config(IP, Num, Type, Intensity, Count, LaunchNum) ->
-    NewIntensity = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
-    NewCount = round(Count / LaunchNum),
-    IPT = ipstring_to_tuple(IP),
-    IPList = make_iplist(IPT, Num),
-    IPTuple = list_to_tuple(IPList),
-    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = Type, intensity = NewIntensity, count = NewCount},
-    dctg_config_server:set_config(Config).
 
 config(IP, Num, Type, Intensity, Count, LaunchNum, Port, Content, Interval) when Type =:= http ->
     Http = #http{port = Port, content = Content, interval = Interval * 1000},
