@@ -58,6 +58,7 @@ waitrecv(_, State) ->
     {next_state, waitrecv, State}.
 
 connect(SrcIP, DestIP, Port) ->
+    error_logger:info_msg("src ~p, dst ~p, port ~p~n", [SrcIP, DestIP, Port]),
     case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
                                         {active, 10},
                                         {keepalive, true} % WJYTODO
@@ -91,11 +92,12 @@ handle_info(_Info, StateName, State = #state{sock = Sock, recv_count = Count}) -
     %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     if
         Count >= 9 ->
-            inet:setopts(Sock, [{active, 10}]);
+            inet:setopts(Sock, [{active, 10}]),
+            NewCount = 0;
         true ->
-            ok
+            NewCount = Count + 1
     end,
-    {next_state, StateName, State#state{recv_count = Count + 1}}.
+    {next_state, StateName, State#state{recv_count = NewCount}}.
 
 terminate(_Reason, _StateName, _State) ->
     ok.
