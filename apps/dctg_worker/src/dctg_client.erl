@@ -37,7 +37,7 @@ tcpconn(timeout, State = #state{
                         interval = Interval,
                         sock = Sock}) ->
     case Sock of
-        undefine ->
+        undefined ->
             NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
