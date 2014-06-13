@@ -11,6 +11,7 @@
     handle_info/3, terminate/3, code_change/4]).
 
 -define(WARN_THRESH, 0.2).
+-define(ETH_P_ALL, 16#0003).
 
 start_link() ->
     gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -75,7 +76,7 @@ init([]) ->
                                 dest = DestList,
                                 interval = Interval,
                                 sock = Socket,
-                                src_mac = SrcMAC,
+                                src_mac = SrcMac,
                                 data = Data,
                                 fraction = 0,
                                 round = 0,
@@ -163,7 +164,7 @@ waitraw({launch, StartTime}, State) ->
 
 launchraw({launch}, State=#launcher_raw{count = Count}) when Count =< 0 ->
     {stop, normal, State};
-launcheraw({launch}, State=#launcher_raw{
+launchraw({launch}, State=#launcher_raw{
                                     intensity = Intensity,
                                     count = Count,
                                     dest = DestList,
