@@ -66,7 +66,7 @@ config(IP, Num, raw, Intensity, Count, LaunchNum, Data) ->
 get_mac(IP) ->
     get_mac(IP, 0).
 
-get_mac(IP, Num) when Num > 3 ->
+get_mac(_IP, Num) when Num > 3 ->
     exit(ping_fail);
 get_mac(IP, Num) ->
     case send_raw_packet:get_ip_by_ping(IP) of
@@ -76,7 +76,7 @@ get_mac(IP, Num) ->
             Mac
     end.
 
-config(IP, Num, http, Intensity, Count, LaunchNum, Port, Content, Interval) when Type =:= http ->
+config(IP, Num, http, Intensity, Count, LaunchNum, Port, Content, Interval) ->
     Http = #http{port = Port, content = Content, interval = Interval * 1000},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     if
