@@ -60,7 +60,7 @@ get_ip_by_ping(IP) ->
     case packet:arplookup(IP) of
         false -> false;
         {0,0,0,0,0,0} -> false;
-        Mac -> Mac
+        Mac -> list_to_binary(tuple_to_list(Mac))
     end.
 
 send() ->
