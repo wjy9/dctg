@@ -68,8 +68,9 @@ loop(Req, DocRoot) ->
                         URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
                         Interval = binary_to_integer(proplists:get_value(<<"interval">>, Content)),
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
-                    _Else ->
-                        ok
+                    raw ->
+                        Data = binary_to_integer(proplists:get_value(<<"data">>, Content), 16),
+                        dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Data)
                 end,
                 Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
             _ ->

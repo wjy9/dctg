@@ -11,8 +11,10 @@
     timestamp = 0,
     connect = 0,
     request = 0,
+    packet = 0,
     total_connect = 0,
-    total_request = 0
+    total_request = 0,
+    total_packet = 0
     }).
 
 -define(SEND_INTERVAL, 1000).
@@ -44,6 +46,11 @@ handle_cast({put, request, Val}, State = #state{request = Request, total_request
     NewTotal = Total + Val,
     {noreply, State#state{request = NewRequest, total_request = NewTotal}};
 
+handle_cast({put, packet, Val}, State = #state{packet = P, total_packet = T}) ->
+    NP = P + Val,
+    NT = T + Val,
+    {noreply, State#state{packet = NP, total_packet = NT}};
+
 handle_cast({start_send, StartTime}, State) ->
     Time = case utils:timediff(StartTime, os:timestamp()) + ?SEND_INTERVAL of
                 Num when Num < 0 ->
@@ -61,14 +68,16 @@ handle_call(_Call, _From, State) ->
 handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, timestamp = TimeStamp,
                                             connect = Connect,
                                             request = Request,
+                                            packet = Packet,
                                             total_connect = TConn,
-                                            total_request = TReq}) ->
+                                            total_request = TReq,
+                                            total_packet = TPkt}) ->
     %error_logger:info_msg("WJY: stat cache timeout send~n"),
-    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, TConn, TReq}),
+    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, Packet, TConn, TReq, TPkt}),
     %error_logger:info_msg("WJY: stat cache send ~p~n", [{Connect, ID, TimeStamp}]),
     NewTimeStamp = TimeStamp + 1,
     erlang:start_timer(?SEND_INTERVAL, self(), send),
-    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0}}.
+    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0, packet = 0}}.
 
 terminate(_Reason, _State) ->
     ok.

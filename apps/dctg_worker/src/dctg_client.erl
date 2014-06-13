@@ -70,7 +70,7 @@ connect(SrcIP, DestIP, Port) ->
             exit(failed)
     end.
 send(Sock, URL) ->
-    Cont = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
+    Cont = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",%WJYTODO
     case gen_tcp:send(Sock, Cont) of
         ok ->
             dctg_stat_cache:put(request, 1);

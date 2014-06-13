@@ -88,23 +88,28 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
 
 stat_update(Array, Time, State, AggArr) ->
     Fun = fun(_I, A, B) -> foldfun(A, B) end,
-    {C, R, TC, TR} = array:foldl(Fun, {0, 0, 0, 0}, Array),
-    array:set(Time, {C, R, TC, TR}, AggArr).
+    {C, R, P, TC, TR, TP} = array:foldl(Fun, {0, 0, 0, 0, 0, 0}, Array),
+    array:set(Time, {C, R, P, TC, TR, TP}, AggArr).
 
-foldfun({C, R, TC, TR}, {Ac1, Ac2, Ac3, Ac4}) ->
-    {Ac1 + C, Ac2 + R, Ac3 + TC, Ac4 + TR}.
+foldfun({C, R, P, TC, TR, TP}, {Ac1, Ac2, Ac3, Ac4, Ac5, Ac6}) ->
+    {Ac1 + C, Ac2 + R, Ac3 + P, Ac4 + TC, Ac5 + TR, Ac6 + TP}.
 
 write_sql(AggArr, CurTime) ->
     case array:get(CurTime, AggArr) of
         undefined ->
             CurTime;
-        {C, R, TC, TR} ->
-            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s, ~p conn, ~p req~n", [CurTime, C, R, TC, TR]),
+        {C, R, P, TC, TR, TP} ->
+            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~n", [CurTime, C, R, P, TC, TR, TP]),
             Bc = list_to_binary(integer_to_list(C)),
             Br = list_to_binary(integer_to_list(R)),
+            Bp = list_to_binary(integer_to_list(P)),
             Btc = list_to_binary(integer_to_list(TC)),
             Btr = list_to_binary(integer_to_list(TR)),
-            emysql:execute(mysql, <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary, ", request = ", Br/binary, ", total_request = ", Btr/binary>>),
+            Btp = list_to_binary(integer_to_list(TP)),
+            emysql:execute(mysql,
+                <<"INSERT INTO stat SET connect = ", Bc/binary, ", total_connect = ", Btc/binary,
+                ", request = ", Br/binary, ", total_request = ", Btr/binary,
+                ", packet = ", Bp/binary, ", total_packet = ", Btp/binary>>),
             write_sql(AggArr, CurTime + 1)
     end.
     

@@ -5,8 +5,10 @@
 -include("dctg_record.hrl").
 
 -export([start_link/0, launch/1]).
--export([init/1, launcher/2, wait/2, handle_event/3,
-    handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
+-export([init/1, launcher/2, wait/2,
+    waitraw/2, launchraw/2,
+    handle_event/3, handle_sync_event/4,
+    handle_info/3, terminate/3, code_change/4]).
 
 -define(WARN_THRESH, 0.2).
 
@@ -25,7 +27,7 @@ init([]) ->
         {Config, IP, Count} when is_record(Config, config) ->
             Type = Config#config.type,
             Intensity = Config#config.intensity,
-            DestList = Config#config.dutlist,
+            DestList = Config#config.dutlist, % dutlist is actually a tuple
             Content = Config#config.protocol,
             if
                 Intensity * 10 < 1 ->
@@ -58,13 +60,28 @@ init([]) ->
                                     },
                     {ok, wait, State};
                 raw ->
-                    %WJYTODO: add raw support
+                    Data = Content#raw.data,
+                    SrcDev = "eth0",
+                    SrcMac = send_raw_packet:get_src_mac(SrcDev),
+                    %% open a PF_PACKET raw socket with ETH_P_ALL
+                    {ok, Socket} = packet:socket(?ETH_P_ALL),
+                    Ifindex = packet:ifindex(Socket, SrcDev),
+                    %%send out packet, by either "packet:send/3" or "packet:bind/2 then procket:sendto/2)"
+                    %%packet:send(Socket, Ifindex, <<DstMAC:6/bytes, SrcMAC:6/bytes, ?ETH_P_IP:16, 9,8,7,6,5,4,3,2,1,16#FF,16#EE,16#DD,16#CC,16#BB,16#AA>>),
+                    ok = packet:bind(Socket, Ifindex),
                     State = #launcher_raw{
                                 intensity = NewIntensity,
                                 count = Count,
-                                interval = Interval
+                                dest = DestList,
+                                interval = Interval,
+                                sock = Socket,
+                                src_mac = SrcMAC,
+                                data = Data,
+                                fraction = 0,
+                                round = 0,
+                                nth = 1
                     },
-                    {ok, wait, State}
+                    {ok, waitraw, State}
             end;
         Other ->
             error_logger:info_msg("WJY: get_config failed~n"),
@@ -132,6 +149,67 @@ do_launch_http(SrcIP, Port, URL, RInterval, Num, DestList, Nth) ->
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
     do_launch_http(SrcIP, Port, URL, RInterval, Num - 1, DestList, NewNth).
+
+waitraw({launch, StartTime}, State) ->
+    Time = case utils:timediff(StartTime, os:timestamp()) of
+                Num when Num < 0 ->
+                    0;
+                Else ->
+                    erlang:trunc(Else)
+            end,
+    gen_fsm:send_event_after(Time, {launch}),
+    dctg_stat_cache:start_send(StartTime),
+    {next_state, launchraw, State#launcher_raw{start_time = StartTime}}.
+
+launchraw({launch}, State=#launcher_raw{count = Count}) when Count =< 0 ->
+    {stop, normal, State};
+launcheraw({launch}, State=#launcher_raw{
+                                    intensity = Intensity,
+                                    count = Count,
+                                    dest = DestList,
+                                    interval = Interval,
+                                    sock = Sock,
+                                    src_mac = SrcMac,
+                                    data = Data,
+                                    start_time = StartTime,
+                                    fraction = Frac,
+                                    round = Round,
+                                    nth = Nth
+                                    }) ->
+    %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
+    CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
+    TimePast = utils:timediff(StartTime, CurrentTime),
+    Timer = case TimePast + Interval * (Round + 1) of
+                Num when Num < 0 ->
+                    error_logger:info_msg("WJY: launcher: too high load!~n"),
+                    0;
+                Else ->
+                    Else
+            end,
+    gen_fsm:send_event_after(erlang:round(Timer), {launch}),
+    NewIntensity = erlang:trunc(Intensity),
+    NewFrac = Frac + Intensity - NewIntensity,
+    if
+        NewFrac > 1 ->
+            NewFrac2 = NewFrac - 1,
+            NewIntensity2 = NewIntensity + 1;
+        true ->
+            NewFrac2 = NewFrac,
+            NewIntensity2 = NewIntensity
+    end,
+    RNum = erlang:min(NewIntensity2, Count),
+    NewNth = do_launch_raw(SrcMac, Data, Sock, RNum, DestList, Nth),
+    {next_state, launcher, State#launcher_raw{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
+
+do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
+    Nth;
+do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
+    DstMac = element(Nth, DestList),
+    procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
+    dctg_stat_cache:put(packet, 1),
+    Size = size(DestList),
+    NewNth = (Nth rem Size) + 1,
+    do_launch_raw(SrcMac, Data, Sock, Num - 1, DestList, NewNth).
 
 handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.

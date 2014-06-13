@@ -12,3 +12,7 @@
     content, % URL
     interval % download interval, ms
     }).
+
+-record(raw, {
+    data
+    }).

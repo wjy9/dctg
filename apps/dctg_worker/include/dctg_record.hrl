@@ -18,9 +18,16 @@
 {
     intensity, % launch client per ms
     count, % total count of clients
-    interval
-}
-).
+    dest,
+    interval,
+    sock,
+    src_mac,
+    data,
+    start_time,
+    fraction,
+    round,
+    nth
+}).
 
 -record(config, {
     dut = {127, 0, 0, 1}, % ip of dut
@@ -35,4 +42,8 @@
     port = 80,
     content, % URL
     interval % download interval, ms
+    }).
+
+-record(raw, {
+    data
     }).
