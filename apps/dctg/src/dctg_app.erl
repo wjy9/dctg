@@ -11,7 +11,7 @@
 
 start(_StartType, _StartArgs) ->
     %error_logger:tty(false),
-    error_logger:logfile({openfile, "controller.log"}),
+    error_logger:logfile({open, "controller.log"}),
     error_logger:info_msg("WJY: dctg start~n", []),
     dctg_sup:start_link().
 

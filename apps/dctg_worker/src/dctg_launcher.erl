@@ -65,13 +65,11 @@ init([]) ->
                     SrcDev = "eth0",
                     SrcMac = send_raw_packet:get_src_mac(SrcDev),
                     %% open a PF_PACKET raw socket with ETH_P_ALL
-                    Path = "/tmp/procket_sock_" ++ integer_to_list(ID),
+                    Path = procket_tmp:name("/tmp/procket_sock_XXXXXXXXXXXX"), % WJYWARN:Path may conflict
                     {ok, Socket} = procket:open(0, [{protocol, procket:ntohs(?ETH_P_ALL)},
                                                     {family, packet}, {type, raw},
                                                     {pipe, Path}]),
                     Ifindex = packet:ifindex(Socket, SrcDev),
-                    %%send out packet, by either "packet:send/3" or "packet:bind/2 then procket:sendto/2)"
-                    %%packet:send(Socket, Ifindex, <<DstMAC:6/bytes, SrcMAC:6/bytes, ?ETH_P_IP:16, 9,8,7,6,5,4,3,2,1,16#FF,16#EE,16#DD,16#CC,16#BB,16#AA>>),
                     ok = packet:bind(Socket, Ifindex),
                     State = #launcher_raw{
                                 intensity = NewIntensity,
