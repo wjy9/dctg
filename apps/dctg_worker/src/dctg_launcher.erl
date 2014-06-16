@@ -65,7 +65,7 @@ init([]) ->
                     SrcDev = "eth0",
                     SrcMac = send_raw_packet:get_src_mac(SrcDev),
                     %% open a PF_PACKET raw socket with ETH_P_ALL
-                    Path = procket_tmp:name("/tmp/procket_sock_XXXXXXXXXXXX"), % WJYWARN:Path may conflict
+                    Path = procket_mktmp:name("/tmp/procket_sock_XXXXXXXXXXXX"), % WJYWARN:Path may conflict
                     {ok, Socket} = procket:open(0, [{protocol, procket:ntohs(?ETH_P_ALL)},
                                                     {family, packet}, {type, raw},
                                                     {pipe, Path}]),
