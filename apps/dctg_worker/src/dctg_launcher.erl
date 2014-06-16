@@ -105,6 +105,7 @@ wait({launch, StartTime}, State) when is_record(State, launcher_http)->
     {next_state, launcher, State#launcher_http{start_time = StartTime}}.
 
 launcher({launch}, State=#launcher_http{count = Count}) when Count =< 0 ->
+    dctg_client_killer:kill_finish(),
     {stop, normal, State};
 launcher({launch}, State=#launcher_http{
                                     ip = IP,
@@ -226,7 +227,6 @@ handle_info(_Info, StateName, State) ->
 
 terminate(_Reason, _StateName, _State) ->
     %error_logger:info_msg("WJY: launcher: test sup active: ~p~n", [dctg_client_sup:active()]),
-    dctg_client_killer:kill_finish(),
     ok.
 
 code_change(_Old, StateName, State, _Extra) ->
