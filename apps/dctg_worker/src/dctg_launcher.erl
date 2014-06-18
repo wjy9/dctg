@@ -22,6 +22,7 @@ launch({Node, StartTime}) ->
 
 init([]) ->
     %error_logger:info_msg("WJY: launcher init~n"),
+    process_flag(trap_exit, true),
     ID = utils:get_id(),
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     case catch dctg_config_server:get_config(ID, ControllerNode) of
@@ -103,8 +104,8 @@ wait({launch, StartTime}, State) when is_record(State, launcher_http)->
     {next_state, launcher, State#launcher_http{start_time = StartTime}}.
 
 launcher({launch}, State=#launcher_http{count = Count}) when Count =< 0 ->
-    dctg_client_killer:kill_finish(),
-    {stop, normal, State};
+    % dctg_client_killer:kill_finish(),
+    {next_state, launcher, State};
 launcher({launch}, State=#launcher_http{
                                     ip = IP,
                                     intensity = Intensity,
@@ -148,7 +149,9 @@ do_launch_http(_, _, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
 do_launch_http(SrcIP, Port, URL, RInterval, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
-    dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval}),
+    %dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval}),
+    Pid = spawn_link(dctg_client, start, [{SrcIP, DestIP, Port, URL, RInterval}]),
+    error_logger:info_msg("WJY: launcher start process ~p~n", [Pid]),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
     do_launch_http(SrcIP, Port, URL, RInterval, Num - 1, DestList, NewNth).
@@ -222,7 +225,8 @@ handle_event(_Event, StateName, State) ->
 handle_sync_event(_Event, _From, StateName, State) ->
     {reply, ok, StateName, State}.
 
-handle_info(_Info, StateName, State) ->
+handle_info({'EXIT', FromPid, Reason}, StateName, State) ->
+    error_logger:info_msg("WJY: launcher receive client exit signal ~p ~p~n", [FromPid, Reason]),
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, _State) ->

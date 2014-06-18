@@ -5,7 +5,7 @@
 -export([start/1]).
 
 -export([init/1, handle_event/3, handle_sync_event/4, tcpconn/2,
-        waitrecv/2,
+        %waitrecv/2,
         handle_info/3, terminate/3, code_change/4]).
 
 -include("dctg_record.hrl").
@@ -16,8 +16,7 @@
     port,
     url,
     interval,
-    sock,
-    recv_count
+    sock
     }).
 
 start(Args) ->
@@ -27,7 +26,7 @@ start(Args) ->
 init({SrcIP, DestIP, Port, URL, Interval}) ->
     {ok, tcpconn, #state{src = SrcIP, dst = DestIP,
                         port = Port, url = URL,
-                        interval = Interval, recv_count = 0}, 0}.
+                        interval = Interval}, 0}.
 
 tcpconn(timeout, State = #state{
                         src = SrcIP,
@@ -42,7 +41,7 @@ tcpconn(timeout, State = #state{
             case Interval of
                 0 ->
                     send(NewSock, URL),
-                    {next_state, waitrecv, State#state{sock = NewSock}};
+                    {next_state, tcpconn, State#state{sock = NewSock}};
                 _ ->
                     send(NewSock, URL),
                     gen_fsm:send_event_after(Interval, timeout),
@@ -54,8 +53,8 @@ tcpconn(timeout, State = #state{
             {next_state, tcpconn, State}
     end.
 
-waitrecv(_, State) ->
-    {next_state, waitrecv, State}.
+% waitrecv(_, State) ->
+%     {next_state, waitrecv, State}.
 
 connect(SrcIP, DestIP, Port) ->
     case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
@@ -84,21 +83,16 @@ handle_event(_Ev, StateName, State) ->
 handle_sync_event(_Ev, _From, StateName, State) ->
     {next_state, StateName, State}.
 
-handle_info(_Info, waitrecv, #state{sock = Sock}) ->
-    gen_tcp:close(Sock),
-    {stop, normal, ok};
-handle_info(_Info, StateName, State = #state{sock = Sock, recv_count = Count}) ->
+% handle_info(_Info, waitrecv, #state{sock = Sock}) ->
+%     gen_tcp:close(Sock),
+%     {stop, normal, ok};
+handle_info({tcp_passive, _S}, StateName, State = #state{sock = Sock}) ->
     %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
-    if
-        Count >= 9 ->
-            inet:setopts(Sock, [{active, 10}]),
-            NewCount = 0;
-        true ->
-            NewCount = Count + 1
-    end,
-    {next_state, StateName, State#state{recv_count = NewCount}}.
+    inet:setopts(Sock, [{active, 10}]),
+    {next_state, StateName, State}.
 
-terminate(_Reason, _StateName, _State) ->
+terminate(_Reason, _StateName, #state{sock = Sock}) ->
+    gen_tcp:close(Sock),
     ok.
 
 code_change(_Old, StateName, State, _Extra) ->

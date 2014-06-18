@@ -23,9 +23,9 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    ClientSup = {dctg_client_sup, {dctg_client_sup, start_link, []}, permanent, 2000, supervisor, [dctg_client_sup]},
+    % ClientSup = {dctg_client_sup, {dctg_client_sup, start_link, []}, permanent, 2000, supervisor, [dctg_client_sup]},
     Launcher = ?CHILD(dctg_launcher, worker),
     StatCache = ?CHILD(dctg_stat_cache, worker),
-    Killer = ?CHILD(dctg_client_killer, worker),
+    % Killer = ?CHILD(dctg_client_killer, worker),
     {ok, { {one_for_one, 5, 10}, [ClientSup, Launcher, StatCache, Killer]} }.
 
