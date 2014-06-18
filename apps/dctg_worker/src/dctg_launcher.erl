@@ -165,6 +165,8 @@ waitraw({launch, StartTime}, State) ->
     {next_state, launchraw, State#launcher_raw{start_time = StartTime}}.
 
 launchraw({launch}, State=#launcher_raw{count = Count}) when Count =< 0 ->
+    {ok, ControllerNode} = application:get_env(dctg_worker, controller),
+    dctg_config_server:finish(ControllerNode),
     {stop, normal, State};
 launchraw({launch}, State=#launcher_raw{
                                     intensity = Intensity,
