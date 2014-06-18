@@ -87,11 +87,14 @@ handle_sync_event(_Ev, _From, StateName, State) ->
 %     gen_tcp:close(Sock),
 %     {stop, normal, ok};
 handle_info({tcp_passive, _S}, StateName, State = #state{sock = Sock}) ->
-    %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     inet:setopts(Sock, [{active, 10}]),
+    {next_state, StateName, State};
+handle_info(_Info, StateName, State) ->
+    %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, #state{sock = Sock}) ->
+    error_logger:info_msg("WJY: client terminate!!!~n"),
     gen_tcp:close(Sock),
     ok.
 

@@ -151,7 +151,7 @@ do_launch_http(SrcIP, Port, URL, RInterval, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
     %dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval}),
     Pid = spawn_link(dctg_client, start, [{SrcIP, DestIP, Port, URL, RInterval}]),
-    error_logger:info_msg("WJY: launcher start process ~p~n", [Pid]),
+    % error_logger:info_msg("WJY: launcher start process ~p~n", [Pid]),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
     do_launch_http(SrcIP, Port, URL, RInterval, Num - 1, DestList, NewNth).
@@ -226,7 +226,9 @@ handle_sync_event(_Event, _From, StateName, State) ->
     {reply, ok, StateName, State}.
 
 handle_info({'EXIT', FromPid, Reason}, StateName, State) ->
-    error_logger:info_msg("WJY: launcher receive client exit signal ~p ~p~n", [FromPid, Reason]),
+    % error_logger:info_msg("WJY: launcher receive client exit signal ~p ~p~n", [FromPid, Reason]),
+    {next_state, StateName, State};
+handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, _State) ->
