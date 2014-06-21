@@ -88,18 +88,19 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
 
 stat_update(Array, Time, State, AggArr) ->
     Fun = fun(_I, A, B) -> foldfun(A, B) end,
-    {C, R, P, TC, TR, TP} = array:foldl(Fun, {0, 0, 0, 0, 0, 0}, Array),
-    array:set(Time, {C, R, P, TC, TR, TP}, AggArr).
+    {C, R, P, TC, TR, TP, I, IT, TCP, TCT} = array:foldl(Fun, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, Array),
+    array:set(Time, {C, R, P, TC, TR, TP, I, IT, TCP, TCT}, AggArr).
 
-foldfun({C, R, P, TC, TR, TP}, {Ac1, Ac2, Ac3, Ac4, Ac5, Ac6}) ->
-    {Ac1 + C, Ac2 + R, Ac3 + P, Ac4 + TC, Ac5 + TR, Ac6 + TP}.
+foldfun({C, R, P, TC, TR, TP, I, IT, TCP, TCT}, {Ac1, Ac2, Ac3, Ac4, Ac5, Ac6, A7, A8, A9, A0}) ->
+    {Ac1 + C, Ac2 + R, Ac3 + P, Ac4 + TC, Ac5 + TR, Ac6 + TP, I + A7, IT + A8, TCP + A9, TCT + A0}.
 
 write_sql(AggArr, CurTime) ->
     case array:get(CurTime, AggArr) of
         undefined ->
             CurTime;
-        {C, R, P, TC, TR, TP} ->
-            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~n", [CurTime, C, R, P, TC, TR, TP]),
+        {C, R, P, TC, TR, TP, I, IT, TCP, TCT} ->
+            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~ninit ~p /s, init_t ~p; tcpconn ~p /s, tcpconn_t ~p~n",
+                [CurTime, C, R, P, TC, TR, TP, I, IT, TCP, TCT]),
             Bc = list_to_binary(integer_to_list(C)),
             Br = list_to_binary(integer_to_list(R)),
             Bp = list_to_binary(integer_to_list(P)),

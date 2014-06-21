@@ -14,7 +14,11 @@
     packet = 0,
     total_connect = 0,
     total_request = 0,
-    total_packet = 0
+    total_packet = 0,
+    init = 0,
+    tcpconn = 0,
+    init_t = 0,
+    tcp_t = 0
     }).
 
 -define(SEND_INTERVAL, 1000).
@@ -51,6 +55,12 @@ handle_cast({put, packet, Val}, State = #state{packet = P, total_packet = T}) ->
     NT = T + Val,
     {noreply, State#state{packet = NP, total_packet = NT}};
 
+handle_cast({put, init, Val}, State = #state{init = Init, init_t = T}) ->
+    {noreply, State#state{init = Init + Val, init_t = T + Val}};
+
+handle_cast({put, tcpconn, Val}, State = #state{tcpconn = C, tcp_t = T}) ->
+    {noreply, State#state{tcpconn = C + Val, tcp_t = T + Val}};
+
 handle_cast({start_send, StartTime}, State) ->
     Time = case utils:timediff(StartTime, os:timestamp()) + ?SEND_INTERVAL of
                 Num when Num < 0 ->
@@ -71,13 +81,17 @@ handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, ti
                                             packet = Packet,
                                             total_connect = TConn,
                                             total_request = TReq,
-                                            total_packet = TPkt}) ->
+                                            total_packet = TPkt,
+                                            init = Init,
+                                            tcpconn = TC,
+                                            init_t = IT,
+                                            tcp_t = TcT}) ->
     %error_logger:info_msg("WJY: stat cache timeout send~n"),
-    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, Packet, TConn, TReq, TPkt}),
+    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, Packet, TConn, TReq, TPkt, Init, IT, TC, TcT}),
     %error_logger:info_msg("WJY: stat cache send ~p~n", [{Connect, ID, TimeStamp}]),
     NewTimeStamp = TimeStamp + 1,
     erlang:start_timer(?SEND_INTERVAL, self(), send),
-    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0, packet = 0}}.
+    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0, packet = 0, init = 0, tcpconn = 0}}.
 
 terminate(_Reason, _State) ->
     ok.
