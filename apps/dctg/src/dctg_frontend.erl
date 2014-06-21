@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, config/9, config/7, set_hostip/2]).
+-export([total/1, config/9, config/7, set_hostip/2, config/10]).
 
 -include("config.hrl").
 
@@ -76,7 +76,8 @@ get_mac(IP, Num) ->
             Mac
     end.
 
-config(IP, Num, http, Intensity, Count, LaunchNum, Port, Content, Interval) ->
+config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
+    Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
     Http = #http{port = Port, content = Content, interval = Interval * 1000},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     if
@@ -109,3 +110,19 @@ calc_count_array(Array, Num, I, Size) ->
     Value = array:get(I, Array),
     Array2 = array:set(I, Value + 1, Array),
     calc_count_array(Array2, Num - 1, I + 1, Size).
+
+config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval, NumPerIP) ->
+    Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
+    Http = #http{port = Port, content = Content, interval = Interval * 1000},
+    Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
+    dctg_config_server:set_launcher_per_ip(NumPerIP),
+    NewIntensity = Intensity2 / NumPerIP,
+    LaunchNum2 = LaunchNum * NumPerIP,
+    NewCount = trunc(Count / LaunchNum2),
+    CountArr1 = array:new([{size, LaunchNum2}, {fixed, true}, {default, NewCount}]),
+    CountArr = calc_count_array(CountArr1, Count rem LaunchNum2, 0, LaunchNum2),
+    IPT = ipstring_to_tuple(IP),
+    IPList = make_iplist(IPT, Num),
+    IPTuple = list_to_tuple(IPList),
+    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = http, intensity = NewIntensity, protocol = Http},
+    dctg_config_server:set_config(Config, CountArr).
