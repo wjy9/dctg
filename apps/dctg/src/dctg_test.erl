@@ -1,6 +1,6 @@
 -module(dctg_test).
 
--export([run/0]).
+-export([run/0, raw/0]).
 
 run() ->
     Hosts = [
@@ -29,3 +29,16 @@ run() ->
     dctg_frontend:total(LauncherNum),
     dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, ConnCount, LauncherNum, Port, Content, Interval, NumPerIP),
     dctg_controller:start_launchers().
+
+raw() ->
+    SrcDev = "eth1",
+    SrcMac = send_raw_packet:get_src_mac(SrcDev),
+    Path = procket_mktmp:name("/tmp/procket_sock_XXXXXXXXXXXX"),
+    {ok, Socket} = procket:open(0, [{protocol, procket:ntohs(16#0003)},
+                                    {family, packet}, {type, raw},
+                                    {pipe, Path}]),
+    Ifindex = packet:ifindex(Socket, SrcDev),
+    ok = packet:bind(Socket, Ifindex),
+    DstIP = {192,168,1,6},
+    DstMac = send_raw_packet:get_ip_by_ping(IP),
+    procket:sendto(Socket, send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#ffffabcd12345678)),
