@@ -40,5 +40,5 @@ raw() ->
     Ifindex = packet:ifindex(Socket, SrcDev),
     ok = packet:bind(Socket, Ifindex),
     DstIP = {192,168,1,6},
-    DstMac = send_raw_packet:get_ip_by_ping(IP),
-    procket:sendto(Socket, send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#ffffabcd12345678)),
+    DstMac = send_raw_packet:get_ip_by_ping(DstIP),
+    procket:sendto(Socket, send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#ffffabcd12345678)).
