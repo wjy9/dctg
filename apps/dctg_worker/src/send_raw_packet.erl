@@ -1,7 +1,7 @@
 -module(send_raw_packet).
 -export([getMACByPing/3, getMAC/3, send/0,
         get_src_mac/1, get_ip_by_ping/1,
-        make_rawpkt/3]).
+        make_rawpkt/3, make_rawippkt/5, make_rawspecialippkt/4]).
 
 -define(ETHER_BROADCAST, <<16#FF, 16#FF, 16#FF, 16#FF, 16#FF, 16#FF>>).
 -define(ETHER_UNKNOWN, <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>).
@@ -92,6 +92,48 @@ make_rawpkt(Sha, Dha, PktData) ->
     ?ETH_P_IP:16,               % type, set to IP but actually raw data afterword
     PktData
     >>.
+
+make_rawspecialippkt(Sha, Dha, {SA1,SA2,SA3,SA4}, {DA1, DA2, DA3, DA4}) ->
+    <<
+    Dha:6/bytes,                % target hardware address
+    Sha:6/bytes,                % source hardware address
+    ?ETH_P_IP:16,               % type, set to IP 
+    4:4,                        % ver
+    5:4,                        % header length
+    0:8,                        % TOS
+    84:16,                      % packet length
+    16#5e61:16,                 % ID
+    16#4000:16,                 % flag & frag
+    16#40:8,                    % TTL
+    1:8,                        % protocol (icmp)
+    16#c843:16,                 % checksum
+    SA1:8, SA2:8, SA3:8, SA4:8, % source IP address
+    DA1:8, DA2:8, DA3:8, DA4:8, % target IP address
+    16#08, 16#00, 16#70, 16#2b, 16#ce, 16#86, 16#00, 16#00, 16#00, 16#00, 16#05, 16#7b, 16#00, 16#06, 
+    16#c7, 16#b8, 16#00, 16#04, 16#59, 16#67, 16#20, 16#21, 16#22, 16#23, 16#24, 16#25, 16#26, 16#27, 16#28, 16#29,
+    16#2a, 16#2b, 16#2c, 16#2d, 16#2e, 16#2f, 16#30, 16#31, 16#32, 16#33, 16#34, 16#35, 16#36, 16#37, 16#38, 16#39,
+    16#3a, 16#3b, 16#3c, 16#3d, 16#3e, 16#3f, 16#40, 16#41, 16#42, 16#43, 16#44, 16#45, 16#46, 16#47, 16#48, 16#49,
+    16#4a, 16#4b
+    >>.
+
+make_rawippkt(Sha, Dha, {SA1,SA2,SA3,SA4}, {DA1, DA2, DA3, DA4}, PktData) ->
+    Pl = 20+byte_size(PktData),
+    list_to_binary([<<
+    Dha:6/bytes,                % target hardware address
+    Sha:6/bytes,                % source hardware address
+    ?ETH_P_IP:16,               % type, set to IP 
+    4:4,                        % ver
+    5:4,                        % header length
+    0:8,                        % TOS
+    Pl:16,                      % packet length
+    0:16,                       % ID
+    0:16,                       % flag & frag
+    255:8,                      % TTL
+    1:8,                        % protocol (icmp)
+    0:16,                       % checksum
+    SA1:8, SA2:8, SA3:8, SA4:8, % source IP address
+    DA1:8, DA2:8, DA3:8, DA4:8  % target IP address
+    >>, PktData]).
 
 make_arp(Type, Sha, {SA1,SA2,SA3,SA4}, {DA1, DA2, DA3, DA4}) ->
     Ether = <<
