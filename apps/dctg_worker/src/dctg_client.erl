@@ -97,7 +97,12 @@ handle_info(_Info, StateName, State) ->
 
 terminate(_Reason, _StateName, #state{sock = Sock}) ->
     error_logger:info_msg("WJY: client terminate!!!~n"),
-    gen_tcp:close(Sock),
+    if
+        Sock /= undefined ->
+            gen_tcp:close(Sock);
+        true ->
+            ok
+    end,
     ok.
 
 code_change(_Old, StateName, State, _Extra) ->
