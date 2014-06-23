@@ -1,7 +1,7 @@
 -module(send_raw_packet).
 -export([getMACByPing/3, getMAC/3, send/0,
         get_src_mac/1, get_ip_by_ping/1,
-        make_rawpkt/3, make_rawippkt/5, make_rawspecialippkt/4, make_arp/4]).
+        make_rawpkt/3, make_rawpkt/4, make_rawippkt/5, make_rawspecialippkt/4, make_arp/4]).
 
 -define(ETHER_BROADCAST, <<16#FF, 16#FF, 16#FF, 16#FF, 16#FF, 16#FF>>).
 -define(ETHER_UNKNOWN, <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>).
@@ -90,6 +90,14 @@ make_rawpkt(Sha, Dha, PktData) ->
     Dha:6/bytes,                % target hardware address
     Sha:6/bytes,                % source hardware address
     ?ETH_P_IP:16,               % type, set to IP but actually raw data afterword
+    PktData
+    >>.
+
+make_rawpkt(Sha, Dha, Type, PktData) ->
+    <<
+    Dha:6/bytes,                % target hardware address
+    Sha:6/bytes,                % source hardware address
+    Type:16,               % type, set to IP but actually raw data afterword
     PktData
     >>.
 
