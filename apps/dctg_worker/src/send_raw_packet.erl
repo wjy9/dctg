@@ -1,7 +1,7 @@
 -module(send_raw_packet).
 -export([getMACByPing/3, getMAC/3, send/0,
         get_src_mac/1, get_ip_by_ping/1,
-        make_rawpkt/3, make_rawippkt/5, make_rawspecialippkt/4]).
+        make_rawpkt/3, make_rawippkt/5, make_rawspecialippkt/4, make_arp/4]).
 
 -define(ETHER_BROADCAST, <<16#FF, 16#FF, 16#FF, 16#FF, 16#FF, 16#FF>>).
 -define(ETHER_UNKNOWN, <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>).

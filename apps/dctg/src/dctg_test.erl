@@ -32,6 +32,8 @@ run() ->
 
 raw(Type) ->
     SrcDev = "eth0",
+%    SrcMac = <<250,22,62,37,187,51>>,
+%    DstMac = <<250,22,62,225,91,175>>,
     SrcMac = send_raw_packet:get_src_mac(SrcDev),
     Path = procket_mktmp:name("/tmp/procket_sock_XXXXXXXXXXXX"),
     error_logger:info_msg("~p~n", [Path]),
@@ -40,15 +42,19 @@ raw(Type) ->
                                     {pipe, Path}]),
     Ifindex = packet:ifindex(Socket, SrcDev),
     ok = packet:bind(Socket, Ifindex),
-%    SrcMac = <<250,22,62,37,187,51>>,
-%    DstMac = <<250,22,62,225,91,175>>,
     DstMac = send_raw_packet:get_ip_by_ping({10,0,0,3}),
     error_logger:info_msg("~p ~p~n", [SrcMac, DstMac]),
+
+    SrcMac1 = <<250,22,62,37,188,52>>,
 
     case Type of 
     1 -> Pkt = send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#ff);
     2 -> Pkt = send_raw_packet:make_rawippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3}, <<16#ff, 16#ee>>);
-    3 -> Pkt = send_raw_packet:make_rawspecialippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3})
+    3 -> Pkt = send_raw_packet:make_rawippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3}, <<16#08, 16#00>>);
+    4 -> Pkt = send_raw_packet:make_rawspecialippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3});
+    5 -> Pkt = send_raw_packet:make_rawspecialippkt(SrcMac1, DstMac, {10,0,0,2}, {10,0,0,3});
+    6 -> Pkt = send_raw_packet:make_arp(1, SrcMac, {10,0,0,2}, {10,0,0,3});
+    7 -> Pkt = send_raw_packet:make_arp(1, SrcMac1, {10,0,0,2}, {10,0,0,3})
     end,
     error_logger:info_msg("~p ~n", [Pkt]),
     procket:sendto(Socket, Pkt).
