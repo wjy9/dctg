@@ -85,7 +85,7 @@ make_raw_data([C1, C2 | Tail], Acc) ->
     make_raw_data(Tail, <<Acc, Num>>);
 make_raw_data([C], Acc) ->
     Num = list_to_integer([C, $0], 16),
-    make_raw_data(Tail, <<Acc, Num>>);
+    make_raw_data([], <<Acc, Num>>);
 make_raw_data([], Acc) ->
     Acc.
 
