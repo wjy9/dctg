@@ -48,8 +48,8 @@ raw(Type) ->
     SrcMac1 = <<250,22,62,37,188,52>>,
 
     case Type of 
-    0 -> Pkt = send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#ff);
-    1 -> Pkt = send_raw_packet:make_rawpkt(SrcMac, DstMac, 16#1314, 16#ff);
+    0 -> Pkt = send_raw_packet:make_rawpkt(SrcMac, DstMac, <<16#08, 16#00, 16#ff, 16#ee>>);
+    1 -> Pkt = send_raw_packet:make_rawpkt(SrcMac, DstMac, <<16#13, 16#14, 16#ff, 16#ee>>);
     2 -> Pkt = send_raw_packet:make_rawippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3}, <<16#ff, 16#ee>>);
     3 -> Pkt = send_raw_packet:make_rawippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3}, <<16#08, 16#00>>);
     4 -> Pkt = send_raw_packet:make_rawspecialippkt(SrcMac, DstMac, {10,0,0,2}, {10,0,0,3});
