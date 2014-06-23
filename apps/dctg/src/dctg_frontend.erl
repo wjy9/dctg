@@ -36,7 +36,8 @@ make_iplist(List = [{IP1, IP2, IP3, IP4} | _Tail], Num) ->
     make_iplist([{IP1, IP2, IP3, IP4 + 1} | List], Num - 1).
 
 config(IP, Num, raw, Intensity, Count, LaunchNum, Data) ->
-    Raw = #raw{data = Data},
+    D = make_raw_data(Data),
+    Raw = #raw{data = D},
     Intensity2 = Intensity / 1000 / LaunchNum,
     if
         Intensity2 > 6 ->
@@ -75,6 +76,18 @@ get_mac(IP, Num) ->
         Mac ->
             Mac
     end.
+
+make_raw_data(Data) ->
+    make_raw_data(Data, <<>>).
+
+make_raw_data([C1, C2 | Tail], Acc) ->
+    Num = list_to_integer([C1, C2], 16),
+    make_raw_data(Tail, <<Acc, Num>>);
+make_raw_data([C], Acc) ->
+    Num = list_to_integer([C, $0], 16),
+    make_raw_data(Tail, <<Acc, Num>>);
+make_raw_data([], Acc) ->
+    Acc.
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
