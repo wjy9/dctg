@@ -39,29 +39,29 @@ config(IP, Num, raw, Intensity, Count, LaunchNum, Data) ->
     D = make_raw_data(Data),
     Raw = #raw{data = D},
     Intensity2 = Intensity / 1000 / LaunchNum,
-    if
-        Intensity2 > 6 ->
-            dctg_config_server:set_launcher_per_ip(3),
-            NewIntensity = Intensity2 / 3,
-            LaunchNum2 = LaunchNum * 3;
-        Intensity2 > 3 ->
-            dctg_config_server:set_launcher_per_ip(2),
-            NewIntensity = Intensity2 / 2,
-            LaunchNum2 = LaunchNum * 2;
-        true ->
-            NewIntensity = Intensity2,
-            LaunchNum2 = LaunchNum
-    end,
-    NewCount = trunc(Count / LaunchNum2),
-    CountArr1 = array:new([{size, LaunchNum2}, {fixed, true}, {default, NewCount}]),
-    CountArr = calc_count_array(CountArr1, Count rem LaunchNum2, 0, LaunchNum2),
+    % if
+    %     Intensity2 > 6 ->
+    %         dctg_config_server:set_launcher_per_ip(3),
+    %         NewIntensity = Intensity2 / 3,
+    %         LaunchNum2 = LaunchNum * 3;
+    %     Intensity2 > 3 ->
+    %         dctg_config_server:set_launcher_per_ip(2),
+    %         NewIntensity = Intensity2 / 2,
+    %         LaunchNum2 = LaunchNum * 2;
+    %     true ->
+    %         NewIntensity = Intensity2,
+    %         LaunchNum2 = LaunchNum
+    % end,
+    NewCount = trunc(Count / LaunchNum),
+    CountArr1 = array:new([{size, LaunchNum}, {fixed, true}, {default, NewCount}]),
+    CountArr = calc_count_array(CountArr1, Count rem LaunchNum, 0, LaunchNum),
     IPT = ipstring_to_tuple(IP),
     IPList = make_iplist(IPT, Num),
     %WJYWARN: dirty trick, let frontend to get dut mac addrs
     F = fun(I) -> get_mac(I) end,
     MacList = utils:pmap(F, IPList),
     MacTuple = list_to_tuple(MacList),
-    Config = #config{dut = IP, dutnum = Num, dutlist = MacTuple, type = raw, intensity = NewIntensity, protocol = Raw},
+    Config = #config{dut = IP, dutnum = Num, dutlist = MacTuple, type = raw, intensity = Intensity2, protocol = Raw},
     dctg_config_server:set_config(Config, CountArr).
 
 get_mac(IP) ->
@@ -93,26 +93,26 @@ config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
     Http = #http{port = Port, content = Content, interval = Interval * 1000},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
-    if
-        Intensity2 > 6 ->
-            dctg_config_server:set_launcher_per_ip(3),
-            NewIntensity = Intensity2 / 3,
-            LaunchNum2 = LaunchNum * 3;
-        Intensity2 > 3 ->
-            dctg_config_server:set_launcher_per_ip(2),
-            NewIntensity = Intensity2 / 2,
-            LaunchNum2 = LaunchNum * 2;
-        true ->
-            NewIntensity = Intensity2,
-            LaunchNum2 = LaunchNum
-    end,
-    NewCount = trunc(Count / LaunchNum2),
-    CountArr1 = array:new([{size, LaunchNum2}, {fixed, true}, {default, NewCount}]),
-    CountArr = calc_count_array(CountArr1, Count rem LaunchNum2, 0, LaunchNum2),
+    % if
+    %     Intensity2 > 6 ->
+    %         dctg_config_server:set_launcher_per_ip(3),
+    %         NewIntensity = Intensity2 / 3,
+    %         LaunchNum2 = LaunchNum * 3;
+    %     Intensity2 > 3 ->
+    %         dctg_config_server:set_launcher_per_ip(2),
+    %         NewIntensity = Intensity2 / 2,
+    %         LaunchNum2 = LaunchNum * 2;
+    %     true ->
+    %         NewIntensity = Intensity2,
+    %         LaunchNum2 = LaunchNum
+    % end,
+    NewCount = trunc(Count / LaunchNum),
+    CountArr1 = array:new([{size, LaunchNum}, {fixed, true}, {default, NewCount}]),
+    CountArr = calc_count_array(CountArr1, Count rem LaunchNum, 0, LaunchNum),
     IPT = ipstring_to_tuple(IP),
     IPList = make_iplist(IPT, Num),
     IPTuple = list_to_tuple(IPList),
-    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = http, intensity = NewIntensity, protocol = Http},
+    Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = http, intensity = Intensity2, protocol = Http},
     dctg_config_server:set_config(Config, CountArr).
 
 calc_count_array(Array, Num, _I, _Size) when Num =< 0 ->
