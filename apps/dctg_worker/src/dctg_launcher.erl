@@ -210,6 +210,7 @@ do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
 do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
     DstMac = element(Nth, DestList),
+    error_logger:info_msg("!!!!!!!!~p ~p ~p~n", [SrcMac, DstMac, Data]),
     Re = procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
     error_logger:info_msg("raw sendto result: ~p~n", [Re]),
     dctg_stat_cache:put(packet, 1),
