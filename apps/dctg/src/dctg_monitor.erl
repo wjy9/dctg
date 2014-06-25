@@ -49,9 +49,9 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
                                             stat_arr = StatArr,
                                             cur_time = CurTime,
                                             aggstat_arr = AggArr}) ->
-%    {C, R, P, TC, TR, TP, I, IT, TCP, TCT} = Stat,
-%    error_logger:info_msg("WJY: launcher~p ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~ninit ~p /s, init_t ~p; tcpconn ~p /s, tcpconn_t ~p~n",
-%                [ID, TimeStamp, C, R, P, TC, TR, TP, I, IT, TCP, TCT]),
+   {C, R, P, TC, TR, TP, I, IT, TCP, TCT} = Stat,
+   error_logger:info_msg("WJY: launcher~p ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~ninit ~p /s, init_t ~p; tcpconn ~p /s, tcpconn_t ~p~n",
+               [ID, TimeStamp, C, R, P, TC, TR, TP, I, IT, TCP, TCT]),
     case array:get(TimeStamp, StatArr) of
         undefined ->
             Array = array:new(Lau),
