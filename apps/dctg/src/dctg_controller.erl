@@ -24,6 +24,8 @@ init([]) ->
     %error_logger:info_msg("WJY: controller init~n"),
     {ok, wait}.
 
+handle_call({start_launchers}, _From, State) when State =:= running ->
+    {reply, error, running};
 handle_call({start_launchers}, _From, _State) ->
     dctg_start_launcher:newbeams(),
     {reply, ok, running};
