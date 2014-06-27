@@ -210,7 +210,7 @@ do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
 do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
     DstMac = element(Nth, DestList),
-    Re = procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
+    procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
     dctg_stat_cache:put(packet, 1),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
