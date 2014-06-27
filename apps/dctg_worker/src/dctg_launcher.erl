@@ -31,15 +31,15 @@ init([]) ->
             DestList = Config#config.dutlist, % dutlist is actually a tuple
             Content = Config#config.protocol,
             if
-                Intensity * 10 < 1 ->
-                    Interval = 100,
-                    NewIntensity = Intensity * 100;
-                Intensity < 1 ->
+                Intensity > 100 ->
+                    NewIntensity = Intensity * 10,
+                    Interval = 10;
+                Intensity < 1.5 ->
                     NewIntensity = Intensity * 10,
                     Interval = 10;
                 true ->
-                    NewIntensity = Intensity * 10, % WJY using 10ms interval
-                    Interval = 10
+                    NewIntensity = Intensity * 100, % WJY using 100ms interval
+                    Interval = 100
             end,
             case Type of
                 http ->
