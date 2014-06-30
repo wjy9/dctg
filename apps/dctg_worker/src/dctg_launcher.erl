@@ -31,15 +31,15 @@ init([]) ->
             DestList = Config#config.dutlist, % dutlist is actually a tuple
             Content = Config#config.protocol,
             if
-                Intensity > 100 ->
-                    NewIntensity = Intensity * 10,
-                    Interval = 10;
-                Intensity < 1.5 ->
+                Intensity * 10 < 1 ->
+                    Interval = 100,
+                    NewIntensity = Intensity * 100;
+                Intensity < 1 ->
                     NewIntensity = Intensity * 10,
                     Interval = 10;
                 true ->
-                    NewIntensity = Intensity * 100, % WJY using 100ms interval
-                    Interval = 100
+                    NewIntensity = Intensity * 10, % WJY using 10ms interval
+                    Interval = 10
             end,
             case Type of
                 http ->
@@ -210,7 +210,7 @@ do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
 do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
     DstMac = element(Nth, DestList),
-    procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
+    Re = procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
     dctg_stat_cache:put(packet, 1),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
