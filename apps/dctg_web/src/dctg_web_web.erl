@@ -29,7 +29,7 @@ loop(Req, DocRoot) ->
                 case Path of
                     "start" ->
                         os:cmd("rm /home/ubuntu/dctg/launcher*.log"), % remove log files
-                        os:cmd("mysql -u dctg -pdctg dctg -e \'truncate table stat;\'"), % truncate mysql table
+                        %os:cmd("mysql -u dctg -pdctg dctg -e \'truncate table stat;\'"), % truncate mysql table
                         dctg_controller:start_launchers(),
                         Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
                     "stop" ->
