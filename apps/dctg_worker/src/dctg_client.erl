@@ -42,7 +42,7 @@ tcpconn(timeout, State = #state{
             NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
-                    send(NewSock, URL),
+                    %send(NewSock, URL),
                     {next_state, tcpconn, State#state{sock = NewSock}};
                 _ ->
                     send(NewSock, URL),
