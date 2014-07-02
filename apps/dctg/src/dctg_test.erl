@@ -56,11 +56,21 @@ raw(Type, IP) ->
     7 -> Pkt = send_raw_packet:make_arp(1, SrcMac1, {10,0,0,2}, {10,0,0,3})
     end,
     {S1, S2, S3} = os:timestamp(),
-    send(Socket, Pkt, 1000000),
+    limitsend(Socket, Pkt, 2000, 10, 500),
     {E1, E2, E3} = os:timestamp(),
     Time = (E1 - S1) * 1000000000 + (E2 - S2) * 1000 + (E3 - S3) / 1000,
     error_logger:info_msg("1000000 pkt use ~p ms~n", [Time]),
     1000 / Time.
+
+limitsend(_, _, _, _, 0) ->
+    ok;
+limitsend(Socket, Pkt, Num, Time, Round) ->
+    erlang:send_after(Time, self(), ok),
+    send(Socket, Pkt, Num),
+    receive
+        ok ->
+            limitsend(Socket, Pkt, Num, Time, Round - 1)
+    end.
 
 send(_, _, 0) ->
     ok;
