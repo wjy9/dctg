@@ -61,7 +61,7 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
             StatArr2 = array:set(TimeStamp, Array2, StatArr),
             if
                 Count >= Lau ->
-                    AggArr2 = stat_update(Array2, TimeStamp, State, AggArr),
+                    AggArr2 = stat_update(Array2, TimeStamp, AggArr),
                     CurTime2 = write_sql(AggArr2, CurTime),
                     {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2, aggstat_arr = AggArr2, cur_time = CurTime2}};
                 true ->
@@ -77,7 +77,7 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
                     StatArr2 = array:set(TimeStamp, Array2, StatArr),
                     if
                         Count2 >= Lau ->
-                            AggArr2 =  stat_update(Array2, TimeStamp, State, AggArr),
+                            AggArr2 =  stat_update(Array2, TimeStamp, AggArr),
                             CurTime2 = write_sql(AggArr2, CurTime),
                             {next_state, run, State#state{count_arr = CountArr2, stat_arr = StatArr2, aggstat_arr = AggArr2, cur_time = CurTime2}};
                         true ->
@@ -89,7 +89,7 @@ run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
             end
     end.
 
-stat_update(Array, Time, State, AggArr) ->
+stat_update(Array, Time, AggArr) ->
     Fun = fun(_I, A, B) -> foldfun(A, B) end,
     {C, R, P, TC, TR, TP, I, IT, TCP, TCT} = array:foldl(Fun, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, Array),
     array:set(Time, {C, R, P, TC, TR, TP, I, IT, TCP, TCT}, AggArr).

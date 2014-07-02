@@ -72,7 +72,13 @@ loop(Req, DocRoot) ->
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
                     raw ->
                         Data = binary_to_list(proplists:get_value(<<"data">>, Content)),
-                        dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Data)
+                        case proplists:get_value(<<"numperip">>, JsonBody) of
+                            undefined ->
+                                dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Data);
+                            Other ->
+                                NumperIP = binary_to_integer(Other),
+                                dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Data, NumperIP)
+                        end
                 end,
                 Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
             _ ->

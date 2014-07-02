@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, config/9, config/7, set_hostip/2, config/10]).
+-export([total/1, config/9, config/7, set_hostip/2, config/10, config/8]).
 
 -include("config.hrl").
 
@@ -123,6 +123,25 @@ calc_count_array(Array, Num, I, Size) ->
     Value = array:get(I, Array),
     Array2 = array:set(I, Value + 1, Array),
     calc_count_array(Array2, Num - 1, I + 1, Size).
+
+config(IP, Num, raw, Intensity, Count, LaunchNum, Data, NumPerIP) ->
+    D = make_raw_data(Data),
+    Raw = #raw{data = D},
+    Intensity2 = Intensity / 1000 / LaunchNum,
+    dctg_config_server:set_launcher_per_ip(NumPerIP),
+    NewIntensity = Intensity2 / NumPerIP,
+    LaunchNum2 = LaunchNum * NumPerIP,
+    NewCount = trunc(Count / LaunchNum2),
+    CountArr1 = array:new([{size, LaunchNum2}, {fixed, true}, {default, NewCount}]),
+    CountArr = calc_count_array(CountArr1, Count rem LaunchNum2, 0, LaunchNum2),
+    IPT = ipstring_to_tuple(IP),
+    IPList = make_iplist(IPT, Num),
+    %WJYWARN: dirty trick, let frontend to get dut mac addrs
+    F = fun(I) -> get_mac(I) end,
+    MacList = utils:pmap(F, IPList),
+    MacTuple = list_to_tuple(MacList),
+    Config = #config{dut = IP, dutnum = Num, dutlist = MacTuple, type = raw, intensity = NewIntensity, protocol = Raw},
+    dctg_config_server:set_config(Config, CountArr).
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval, NumPerIP) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
