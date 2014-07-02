@@ -1,6 +1,6 @@
 -module(dctg_test).
 
--export([run/0, raw/1]).
+-export([run/0, raw/2]).
 
 run() ->
     Hosts = [
@@ -30,20 +30,18 @@ run() ->
     dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, ConnCount, LauncherNum, Port, Content, Interval, NumPerIP),
     dctg_controller:start_launchers().
 
-raw(Type) ->
+raw(Type, IP) ->
     SrcDev = "eth0",
 %    SrcMac = <<250,22,62,37,187,51>>,
 %    DstMac = <<250,22,62,225,91,175>>,
     SrcMac = send_raw_packet:get_src_mac(SrcDev),
     Path = procket_mktmp:name("/tmp/procket_sock_XXXXXXXXXXXX"),
-    error_logger:info_msg("~p~n", [Path]),
     {ok, Socket} = procket:open(0, [{protocol, procket:ntohs(16#0003)},
                                     {family, packet}, {type, raw},
                                     {pipe, Path}]),
     Ifindex = packet:ifindex(Socket, SrcDev),
     ok = packet:bind(Socket, Ifindex),
-    DstMac = send_raw_packet:get_ip_by_ping({10,0,0,3}),
-    error_logger:info_msg("~p ~p~n", [SrcMac, DstMac]),
+    DstMac = send_raw_packet:get_ip_by_ping(IP),
 
     SrcMac1 = <<250,22,62,37,188,52>>,
 
@@ -57,5 +55,15 @@ raw(Type) ->
     6 -> Pkt = send_raw_packet:make_arp(1, SrcMac, {10,0,0,2}, {10,0,0,3});
     7 -> Pkt = send_raw_packet:make_arp(1, SrcMac1, {10,0,0,2}, {10,0,0,3})
     end,
-    error_logger:info_msg("~p ~n", [Pkt]),
-    procket:sendto(Socket, Pkt).
+    {S1, S2, S3} = os:timestamp(),
+    send(Socket, Pkt, 1000000),
+    {E1, E2, E3} = os:timestamp(),
+    Time = (E1 - S1) * 1000000000 + (E2 - S2) * 1000 + (E3 - S3) / 1000,
+    error_logger:info_msg("1000000 pkt use ~p ms~n", [Time]),
+    1000 / Time.
+
+send(_, _, 0) ->
+    ok;
+send(Socket, Pkt, Num) ->
+    procket:sendto(Socket, Pkt),
+    send(Socket, Pkt, Num - 1).
