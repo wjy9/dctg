@@ -1,3 +1,4 @@
+cd /home/ubuntu/dctg
 erl -setcookie test -sname controller@testercontroller \
 -pa /home/ubuntu/dctg/apps/dctg/ebin/ \
 -pa /home/ubuntu/dctg/apps/dctg_worker/ebin/ \
