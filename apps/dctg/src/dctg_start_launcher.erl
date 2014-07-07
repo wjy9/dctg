@@ -26,7 +26,8 @@ handle_cast({newbeams}, _State) ->
     HostList = dctg_config_server:get_hostlist(),
     {ok, File} = file:open("sysarg.config", [read]),
     {ok, FileArg} = file:read_line(File),
-    SysArgs = FileArg ++ " -rsh ssh -detached -hidden -setcookie " ++ atom_to_list(erlang:get_cookie()),
+    FileArg1 = string:strip(FileArg, both, $\n),
+    SysArgs = FileArg1 ++ " -rsh ssh -detached -hidden -setcookie " ++ atom_to_list(erlang:get_cookie()),
     %other args: -boot xxx -boot_var path/xxx  +A 16 -kernel xxxxx
     {ok, PAList} = init:get_argument(pa),
     PA = lists:flatten(lists:flatmap(fun(A) -> [" -pa "] ++ A end, PAList)),
