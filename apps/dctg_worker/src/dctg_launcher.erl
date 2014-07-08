@@ -61,6 +61,12 @@ init([]) ->
                                     },
                     {ok, wait, State};
                 raw ->
+                    if
+                        Count =:= 0 ->
+                            NewCount = -1; % dirty trick to send raw packet infinitely when count is 0
+                        true ->
+                            NewCount = Count
+                    end,
                     Data = Content#raw.data,
                     SrcDev = "eth0",
                     SrcMac = send_raw_packet:get_src_mac(SrcDev),
@@ -73,7 +79,7 @@ init([]) ->
                     ok = packet:bind(Socket, Ifindex),
                     State = #launcher_raw{
                                 intensity = NewIntensity,
-                                count = Count,
+                                count = NewCount,
                                 dest = DestList,
                                 interval = Interval,
                                 sock = Socket,
@@ -164,7 +170,7 @@ waitraw({launch, StartTime}, State) ->
     dctg_stat_cache:start_send(StartTime),
     {next_state, launchraw, State#launcher_raw{start_time = StartTime}}.
 
-launchraw({launch}, State=#launcher_raw{count = Count}) when Count =< 0 ->
+launchraw({launch}, State=#launcher_raw{count = Count}) when Count =:= 0 ->
     {ok, ControllerNode} = application:get_env(dctg_worker, controller),
     dctg_config_server:finish(ControllerNode),
     {stop, normal, State};
@@ -210,8 +216,12 @@ do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
 do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
     DstMac = element(Nth, DestList),
-    procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)),
-    dctg_stat_cache:put(packet, 1),
+    case procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)) of
+        ok ->
+            dctg_stat_cache:put(packet, 1);
+        Error ->
+            error_logger:info_msg("launcher raw sendto failed, ~p~n", [Error])
+    end,
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
     do_launch_raw(SrcMac, Data, Sock, Num - 1, DestList, NewNth).

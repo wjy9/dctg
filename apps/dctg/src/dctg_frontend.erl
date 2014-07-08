@@ -1,6 +1,6 @@
 -module(dctg_frontend).
 
--export([total/1, config/9, config/7, set_hostip/2, config/10, config/8]).
+-export([total/1, config/9, config/8, set_hostip/2, config/10]).
 
 -include("config.hrl").
 
@@ -35,8 +35,13 @@ make_iplist(List, 0) ->
 make_iplist(List = [{IP1, IP2, IP3, IP4} | _Tail], Num) ->
     make_iplist([{IP1, IP2, IP3, IP4 + 1} | List], Num - 1).
 
-config(IP, Num, raw, Intensity, Count, LaunchNum, Data) ->
-    D = make_raw_data(Data),
+config(IP, Num, raw, Intensity, Count, LaunchNum, Data, Length) ->
+    if
+        Length =:= undefined ->
+            D = make_raw_data(Data);
+        true ->
+            D = make_raw(Data, Length)
+    end,
     Raw = #raw{data = D},
     Intensity2 = Intensity / 1000 / LaunchNum,
     % if
@@ -77,6 +82,17 @@ get_mac(IP, Num) ->
             Mac
     end.
 
+make_raw(Data, Length) ->
+    NewData = make_random_data(lists:reverse(Data), (Length - 12 - 4) * 2 - length(Data)),
+    make_raw_data(NewData, <<>>).
+
+make_random_data(Data, Length) when Length =< 0 ->
+    lists:reverse(Data);
+make_random_data(Data, Length) ->
+    Chars = "0123456789ABCDEF",
+    H = lists:nth(random:uniform(length(Chars)), Chars),
+    make_random_data([H | Data], Length - 1).
+
 make_raw_data(Data) ->
     make_raw_data(Data, <<>>).
 
@@ -87,6 +103,7 @@ make_raw_data([C], Acc) ->
     Num = list_to_integer([C, $0], 16),
     make_raw_data([], <<Acc/binary, Num>>);
 make_raw_data([], Acc) ->
+    error_logger:info_msg("raw data: ~p~n", [Acc]),
     Acc.
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
@@ -113,19 +130,15 @@ config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
     IPList = make_iplist(IPT, Num),
     IPTuple = list_to_tuple(IPList),
     Config = #config{dut = IP, dutnum = Num, dutlist = IPTuple, type = http, intensity = Intensity2, protocol = Http},
-    dctg_config_server:set_config(Config, CountArr).
+    dctg_config_server:set_config(Config, CountArr);
 
-calc_count_array(Array, Num, _I, _Size) when Num =< 0 ->
-    Array;
-calc_count_array(Array, Num, I, Size) when I >= Size ->
-    calc_count_array(Array, Num, 0, Size);
-calc_count_array(Array, Num, I, Size) ->
-    Value = array:get(I, Array),
-    Array2 = array:set(I, Value + 1, Array),
-    calc_count_array(Array2, Num - 1, I + 1, Size).
-
-config(IP, Num, raw, Intensity, Count, LaunchNum, Data, NumPerIP) ->
-    D = make_raw_data(Data),
+config(IP, Num, raw, Intensity, Count, LaunchNum, Data, Length, NumPerIP) ->
+    if
+        Length =:= undefined ->
+            D = make_raw_data(Data);
+        true ->
+            D = make_raw(Data, Length)
+    end,
     Raw = #raw{data = D},
     Intensity2 = Intensity / 1000 / LaunchNum,
     dctg_config_server:set_launcher_per_ip(NumPerIP),
@@ -142,6 +155,15 @@ config(IP, Num, raw, Intensity, Count, LaunchNum, Data, NumPerIP) ->
     MacTuple = list_to_tuple(MacList),
     Config = #config{dut = IP, dutnum = Num, dutlist = MacTuple, type = raw, intensity = NewIntensity, protocol = Raw},
     dctg_config_server:set_config(Config, CountArr).
+
+calc_count_array(Array, Num, _I, _Size) when Num =< 0 ->
+    Array;
+calc_count_array(Array, Num, I, Size) when I >= Size ->
+    calc_count_array(Array, Num, 0, Size);
+calc_count_array(Array, Num, I, Size) ->
+    Value = array:get(I, Array),
+    Array2 = array:set(I, Value + 1, Array),
+    calc_count_array(Array2, Num - 1, I + 1, Size).
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval, NumPerIP) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",

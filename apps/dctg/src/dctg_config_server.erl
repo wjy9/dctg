@@ -94,6 +94,7 @@ handle_cast({init_fin}, State = #state{launcher = Count, total = Num}) ->
     if
         Count + 1 >= Num ->
             %error_logger:info_msg("WJY: enough~n"),
+            dctg_controller:set_status(running),
             dctg_start_launcher:launch_start();
         true ->
             ok
