@@ -125,6 +125,13 @@ launcher({launch}, State=#launcher_http{
                                     round = Round,
                                     nth = Nth
                                     }) ->
+    if
+        Round =:= 0 ->
+            {ok, ControllerNode} = application:get_env(dctg_worker, controller),
+            dctg_config_server:start_send(ControllerNode);
+        true ->
+            ok
+    end,
     %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),
@@ -187,6 +194,13 @@ launchraw({launch}, State=#launcher_raw{
                                     round = Round,
                                     nth = Nth
                                     }) ->
+    if
+        Round =:= 0 ->
+            {ok, ControllerNode} = application:get_env(dctg_worker, controller),
+            dctg_config_server:start_send(ControllerNode);
+        true ->
+            ok
+    end,
     %error_logger:info_msg("WJY: launch, Count: ~p~n", [Count]),
     CurrentTime = os:timestamp(), % TODO: should be erlang:now()?
     TimePast = utils:timediff(StartTime, CurrentTime),

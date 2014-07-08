@@ -63,7 +63,8 @@ remote_launcher(Host, ID, Args) ->
         {ok, Node} ->
             case net_kernel:connect_node(Node) of
                 true ->
-                    error_logger:info_msg("WJY: connect_node OK~n");
+                    % error_logger:info_msg("WJY: connect_node OK~n");
+                    ok;
                 _Else ->
                     error_logger:info_msg("WJY: connect_node fail~n")
             end,

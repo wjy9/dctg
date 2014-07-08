@@ -37,7 +37,19 @@ loop(Req, DocRoot) ->
                         Req:respond({200, [{"Content-Type", "text/plain"}], "ok"});
                     "status" ->
                         Status = dctg_controller:status(),
-                        Req:respond({200, [{"Content-Type", "text/plain"}, {"Access-Control-Allow-Origin", "*"}], atom_to_list(Status)});
+                        Res = case Status of
+                            wait ->
+                                "wait";
+                            init ->
+                                "initialize(setting up tester)";
+                            starting ->
+                                "ok(starting traffic in 10 seconds)";
+                            running ->
+                                "ok(sending)";
+                            finish ->
+                                "stopped"
+                        end,
+                        Req:respond({200, [{"Content-Type", "text/plain"}, {"Access-Control-Allow-Origin", "*"}], Res});
                     _ ->
                         Req:serve_file(Path, DocRoot)
                 end;

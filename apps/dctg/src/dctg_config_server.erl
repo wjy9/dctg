@@ -10,6 +10,7 @@
 
 -record(state, {
     launcher = 0,
+    start = 0,
     total,
     config,
     finish = 0,
@@ -43,6 +44,9 @@ set_launcher_per_ip(Num) ->
 
 init_fin(Node) ->
     gen_server:cast({?MODULE, Node}, {init_fin}).
+
+start_send(Node) ->
+    gen_server:cast({?MODULE, Node}, {start_send}).
 
 finish(Node) ->
     gen_server:cast({?MODULE, Node}, {finish}).
@@ -94,12 +98,21 @@ handle_cast({init_fin}, State = #state{launcher = Count, total = Num}) ->
     if
         Count + 1 >= Num ->
             %error_logger:info_msg("WJY: enough~n"),
-            dctg_controller:set_status(running),
+            dctg_controller:set_status(starting),
             dctg_start_launcher:launch_start();
         true ->
             ok
     end,
     {noreply, State#state{launcher = Count + 1}};
+
+handle_cast({start_send}, State = #state{start = Count, total = Num}) ->
+    if
+        Count + 1 >= Num ->
+            dctg_controller:set_status(running);
+        true ->
+            ok
+    end,
+    {noreply, State#state{start = Count + 1}};
 
 handle_cast({finish}, State = #state{total = Total, finish = Fin}) ->
     %error_logger:info_msg("WJY: config server: finish ~p~n", [Fin]),
