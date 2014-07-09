@@ -41,12 +41,14 @@ loop(Req, DocRoot) ->
                             wait ->
                                 "wait";
                             init ->
-                                "initialize(setting up tester)";
+                                "setting up tester";
                             starting ->
-                                "ok(starting traffic in 10 seconds)";
+                                "starting traffic in 10 seconds";
                             running ->
-                                "ok(sending)";
+                                "sending";
                             finish ->
+                                "finished";
+                            stop ->
                                 "stopped"
                         end,
                         Req:respond({200, [{"Content-Type", "text/plain"}, {"Access-Control-Allow-Origin", "*"}], Res});

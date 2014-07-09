@@ -46,7 +46,7 @@ handle_cast({stop}, _State) ->
     dctg_start_launcher:stop(),
     dctg_monitor:stop(),
     dctg_config_server:stop(),
-    {noreply, wait};
+    {noreply, stop};
 
 handle_cast({set_status, Status}, _State) ->
     {noreply, Status}.
