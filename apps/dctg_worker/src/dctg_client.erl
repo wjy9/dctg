@@ -93,7 +93,8 @@ handle_info({tcp_passive, _S}, StateName, State = #state{sock = Sock}) ->
     {next_state, StateName, State};
 handle_info(_Info, StateName, State) ->
     %error_logger:info_msg("WJY: received: ~p, time: ~p~n", [Info, os:timestamp()]),
-    {next_state, StateName, State}.
+    %erlang:garbage_collect(self()),%or hibernate?
+    {next_state, StateName, State, hibernate}.
 
 terminate(_Reason, _StateName, #state{sock = Sock}) ->
     error_logger:info_msg("WJY: client terminate!!!~n"),

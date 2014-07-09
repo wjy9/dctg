@@ -87,7 +87,7 @@ handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, ti
                                             init_t = IT,
                                             tcp_t = TcT}) ->
     %error_logger:info_msg("WJY: stat cache timeout send~n"),
-    error_logger:info_msg("memory usage: ~p~n", [erlang:memory()]),
+    %error_logger:info_msg("memory usage: ~p~n", [erlang:memory()]),
     dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, Packet, TConn, TReq, TPkt, Init, IT, TC, TcT}),
     %error_logger:info_msg("WJY: stat cache send ~p~n", [{Connect, ID, TimeStamp}]),
     NewTimeStamp = TimeStamp + 1,
