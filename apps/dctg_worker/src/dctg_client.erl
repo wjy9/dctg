@@ -16,6 +16,7 @@
     port,
     url,
     interval,
+    start_after,
     sock
     }).
 
@@ -23,11 +24,12 @@ start(Args) ->
     %error_logger:info_msg("WJY: start client args ~p~n", [Args]),
     gen_fsm:start_link(?MODULE, Args, []).
 
-init({SrcIP, DestIP, Port, URL, Interval}) ->
+init({SrcIP, DestIP, Port, URL, Interval, StartAfter}) ->
     dctg_stat_cache:put(init, 1),
     {ok, tcpconn, #state{src = SrcIP, dst = DestIP,
                         port = Port, url = URL,
-                        interval = Interval}, 0}.
+                        interval = Interval,
+                        start_after = StartAfter}, 0}.
 
 tcpconn(timeout, State = #state{
                         src = SrcIP,
@@ -35,6 +37,7 @@ tcpconn(timeout, State = #state{
                         port = Port,
                         url = URL,
                         interval = Interval,
+                        start_after = StartAfter,
                         sock = Sock}) ->
     case Sock of
         undefined ->
@@ -42,11 +45,11 @@ tcpconn(timeout, State = #state{
             NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
-                    send(NewSock, URL),
+                    %send(NewSock, URL),
                     {next_state, tcpconn, State#state{sock = NewSock}};
                 _ ->
                     send(NewSock, URL),
-                    gen_fsm:send_event_after(Interval, timeout),
+                    gen_fsm:send_event_after(StartAfter, timeout),
                     {next_state, tcpconn, State#state{sock = NewSock}}
             end;
         _ ->

@@ -8,6 +8,7 @@
     port,
     url,
     req_interval,
+    start_after,
     start_time,
     fraction,
     round,
@@ -41,7 +42,8 @@
 -record(http, {
     port = 80,
     content, % URL
-    interval % download interval, ms
+    interval, % download interval, ms
+    start_time
     }).
 
 -record(raw, {

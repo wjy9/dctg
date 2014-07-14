@@ -46,6 +46,7 @@ init([]) ->
                     Port = Content#http.port,
                     URL = Content#http.content,
                     RequestInterval = Content#http.interval,
+                    StartAfter = Content#http.start_time,
                     State = #launcher_http{
                                         ip = IP,
                                         intensity = NewIntensity,
@@ -55,6 +56,7 @@ init([]) ->
                                         port = Port,
                                         url = URL,
                                         req_interval = RequestInterval,
+                                        start_after = StartAfter,
                                         fraction = 0,
                                         round = 0,
                                         nth = 1
@@ -121,6 +123,7 @@ launcher({launch}, State=#launcher_http{
                                     port = Port,
                                     url = URL,
                                     req_interval = RInterval,
+                                    start_after = StartAfter,
                                     fraction = Frac,
                                     round = Round,
                                     nth = Nth
@@ -154,17 +157,17 @@ launcher({launch}, State=#launcher_http{
             NewIntensity2 = NewIntensity
     end,
     RNum = erlang:min(NewIntensity2, Count),
-    NewNth = do_launch_http(IP, Port, URL, RInterval, RNum, DestList, Nth),
+    NewNth = do_launch_http(IP, Port, URL, RInterval, StartAfter, RNum, DestList, Nth),
     {next_state, launcher, State#launcher_http{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
-do_launch_http(_, _, _, _, Num, _, Nth) when Num =< 0 ->
+do_launch_http(_, _, _, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
-do_launch_http(SrcIP, Port, URL, RInterval, Num, DestList, Nth) ->
+do_launch_http(SrcIP, Port, URL, RInterval, StartAfter, Num, DestList, Nth) ->
     DestIP = element(Nth, DestList),
-    dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval}),
+    dctg_client_sup:start_child({SrcIP, DestIP, Port, URL, RInterval, StartAfter}),
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
-    do_launch_http(SrcIP, Port, URL, RInterval, Num - 1, DestList, NewNth).
+    do_launch_http(SrcIP, Port, URL, RInterval, StartAfter, Num - 1, DestList, NewNth).
 
 waitraw({launch, StartTime}, State) ->
     Time = case utils:timediff(StartTime, os:timestamp()) of
