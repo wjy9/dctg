@@ -59,7 +59,7 @@ tcpconn(timeout, State = #state{
 %     {next_state, waitrecv, State}.
 
 connect(SrcIP, DestIP, Port) ->
-    case gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
+    case catch gen_tcp:connect(DestIP, Port, [{ip, SrcIP},
                                         {active, 10},
                                         {keepalive, true} % WJYTODO
                                         ]) of
@@ -68,6 +68,9 @@ connect(SrcIP, DestIP, Port) ->
             Sock;
         {error, Reason} ->
             error_logger:info_msg("WJY: client tcp connect fail, ~p~n", [Reason]),
+            exit(failed);
+        Exit ->
+            error_logger:info_msg("WJY: client tcp connect error ~p~n", [Exit]),
             exit(failed)
     end.
 
