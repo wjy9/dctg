@@ -137,7 +137,7 @@ launcher({launch}, State=#launcher_http{
     TimePast = utils:timediff(StartTime, CurrentTime),
     Timer = case TimePast + Interval * (Round + 1) of
                 Num when Num < 0 ->
-                    error_logger:info_msg("WJY: launcher: too high load!~n"),
+                    %error_logger:info_msg("WJY: launcher: too high load!~n"),
                     0;
                 Else ->
                     Else
@@ -206,7 +206,7 @@ launchraw({launch}, State=#launcher_raw{
     TimePast = utils:timediff(StartTime, CurrentTime),
     Timer = case TimePast + Interval * (Round + 1) of
                 Num when Num < 0 ->
-                    error_logger:info_msg("WJY: launcher: too high load!~n"),
+                    %error_logger:info_msg("WJY: launcher: too high load!~n"),
                     0;
                 Else ->
                     Else
