@@ -108,7 +108,7 @@ make_raw_data([], Acc) ->
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
-    Http = #http{port = Port, content = Content, interval = Interval * 1000, start_time = Count / Intensity * 1000},
+    Http = #http{port = Port, content = Content, interval = Interval * 1000, start_time = round(Count / Intensity * 1000)},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     % if
     %     Intensity2 > 6 ->
@@ -167,7 +167,7 @@ calc_count_array(Array, Num, I, Size) ->
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval, NumPerIP) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
-    Http = #http{port = Port, content = Content, interval = Interval * 1000},
+    Http = #http{port = Port, content = Content, interval = Interval * 1000, start_time = round(Count / Intensity * 1000)},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     dctg_config_server:set_launcher_per_ip(NumPerIP),
     NewIntensity = Intensity2 / NumPerIP,
