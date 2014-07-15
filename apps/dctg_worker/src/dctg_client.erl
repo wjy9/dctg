@@ -62,7 +62,7 @@ tcpconn(timeout, State = #state{
                         Else ->
                             Else
                     end,
-                    gen_fsm:send_event_after(Timer, timeout),
+                    gen_fsm:send_event_after(round(Timer), timeout),
                     {next_state, tcpconn, State#state{sock = NewSock, start_time = NewStartTime}}
             end;
         _ ->
@@ -77,7 +77,7 @@ tcpconn(timeout, State = #state{
                         Else ->
                             Else
                     end,
-            gen_fsm:send_event_after(Timer, timeout),
+            gen_fsm:send_event_after(round(Timer), timeout),
             {next_state, tcpconn, State#state{round = Round + 1}}
     end.
 
