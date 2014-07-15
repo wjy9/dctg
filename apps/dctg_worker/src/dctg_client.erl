@@ -52,7 +52,7 @@ tcpconn(timeout, State = #state{
                     {next_state, tcpconn, State#state{sock = NewSock}};
                 _ ->
                     %send(NewSock, URL),
-                    CurrenTime = os:timestamp(),
+                    CurrentTime = os:timestamp(),
                     {T1, T2, T3} = StartTime,
                     NewStartTime = {T1, T2 + StartAfter / 1000, T3},
                     TimePast = utils:timediff(NewStartTime, CurrentTime),
