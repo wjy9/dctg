@@ -67,7 +67,7 @@ tcpconn(timeout, State = #state{
             end;
         _ ->
             send(Sock, URL),
-            CurrenTime = os:timestamp(),
+            CurrentTime = os:timestamp(),
             StartTime = State#state.start_time,
             Round = State#state.round,
             TimePast = utils:timediff(StartTime, CurrentTime),
