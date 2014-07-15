@@ -69,7 +69,7 @@ tcpconn(timeout, State = #state{
             send(Sock, URL),
             CurrenTime = os:timestamp(),
             StartTime = State#state.start_time,
-            Round = State@state.round,
+            Round = State#state.round,
             TimePast = utils:timediff(StartTime, CurrentTime),
             Timer = case TimePast + Interval * (Round + 1) of
                         Num when Num < 0 ->
