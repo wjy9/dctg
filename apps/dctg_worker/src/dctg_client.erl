@@ -27,7 +27,7 @@ start(Args) ->
     gen_fsm:start_link(?MODULE, Args, []).
 
 init({SrcIP, DestIP, Port, URL, Interval, StartAfter}) ->
-    dctg_stat_cache:put(init, 1),
+    %dctg_stat_cache:put(init, 1),
     {ok, tcpconn, #state{src = SrcIP, dst = DestIP,
                         port = Port, url = URL,
                         interval = Interval,
@@ -41,10 +41,10 @@ tcpconn(timeout, State = #state{
                         interval = Interval,
                         start_after = StartAfter,
                         sock = Sock}) ->
-    StartTime = os:timestamp(),
     case Sock of
         undefined ->
-            dctg_stat_cache:put(tcpconn, 1),
+            StartTime = os:timestamp(),
+            %dctg_stat_cache:put(tcpconn, 1),
             NewSock = connect(SrcIP, DestIP, Port),
             case Interval of
                 0 ->
