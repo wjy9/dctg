@@ -17,7 +17,9 @@
     url,
     interval,
     start_after,
-    sock
+    sock,
+    start_time,
+    round = 0
     }).
 
 start(Args) ->
@@ -39,6 +41,7 @@ tcpconn(timeout, State = #state{
                         interval = Interval,
                         start_after = StartAfter,
                         sock = Sock}) ->
+    StartTime = os:timestamp(),
     case Sock of
         undefined ->
             dctg_stat_cache:put(tcpconn, 1),
@@ -48,14 +51,34 @@ tcpconn(timeout, State = #state{
                     %send(NewSock, URL),
                     {next_state, tcpconn, State#state{sock = NewSock}};
                 _ ->
-                    send(NewSock, URL),
-                    gen_fsm:send_event_after(StartAfter, timeout),
-                    {next_state, tcpconn, State#state{sock = NewSock}}
+                    %send(NewSock, URL),
+                    CurrenTime = os:timestamp(),
+                    {T1, T2, T3} = StartTime,
+                    NewStartTime = {T1, T2 + StartAfter / 1000, T3},
+                    TimePast = utils:timediff(NewStartTime, CurrentTime),
+                    Timer = case TimePast of
+                        Num when Num < 0 ->
+                            0;
+                        Else ->
+                            Else
+                    end,
+                    gen_fsm:send_event_after(Timer, timeout),
+                    {next_state, tcpconn, State#state{sock = NewSock, start_time = NewStartTime}}
             end;
         _ ->
             send(Sock, URL),
-            gen_fsm:send_event_after(Interval, timeout),
-            {next_state, tcpconn, State}
+            CurrenTime = os:timestamp(),
+            StartTime = State#state.start_time,
+            Round = State@state.round,
+            TimePast = utils:timediff(StartTime, CurrentTime),
+            Timer = case TimePast + Interval * (Round + 1) of
+                        Num when Num < 0 ->
+                            0;
+                        Else ->
+                            Else
+                    end,
+            gen_fsm:send_event_after(Timer, timeout),
+            {next_state, tcpconn, State#state{round = Round + 1}}
     end.
 
 % waitrecv(_, State) ->
