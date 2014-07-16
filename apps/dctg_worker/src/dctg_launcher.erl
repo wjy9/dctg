@@ -242,7 +242,8 @@ do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
         ok ->
             dctg_stat_cache:put(packet, 1);
         Error ->
-            error_logger:info_msg("launcher raw sendto failed, ~p~n", [Error])
+            % error_logger:info_msg("launcher raw sendto failed, ~p~n", [Error])
+            ok
     end,
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,

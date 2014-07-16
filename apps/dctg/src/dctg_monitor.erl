@@ -41,7 +41,7 @@ wait({set_launchernum, Num}, State) ->
     {next_state, run, State#state{lau_num = Num}};
 
 wait({stat, ID, TimeStamp, Stat}, State) ->
-    error_logger:info_msg("WJY: monitor: stat received after finish: ~p, ~p, ~p ~n", [ID, TimeStamp, Stat]),
+    %error_logger:info_msg("WJY: monitor: stat received after finish: ~p, ~p, ~p ~n", [ID, TimeStamp, Stat]),
     {next_state, wait, State}.
 
 run({stat, ID, TimeStamp, Stat}, State = #state{lau_num = Lau,
@@ -102,8 +102,8 @@ write_sql(AggArr, CurTime) ->
         undefined ->
             CurTime;
         {C, R, P, TC, TR, TP, I, IT, TCP, TCT} ->
-            error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~ninit ~p /s, init_t ~p; tcpconn ~p /s, tcpconn_t ~p~n",
-                [CurTime, C, R, P, TC, TR, TP, I, IT, TCP, TCT]),
+            % error_logger:info_msg("WJY: stat output ~p: ~p conn/s ~p req/s ~p pkt/s, ~p conn, ~p req ~p pkt~ninit ~p /s, init_t ~p; tcpconn ~p /s, tcpconn_t ~p~n",
+            %     [CurTime, C, R, P, TC, TR, TP, I, IT, TCP, TCT]),
             Bc = list_to_binary(integer_to_list(C)),
             Br = list_to_binary(integer_to_list(R)),
             Bp = list_to_binary(integer_to_list(P)),
