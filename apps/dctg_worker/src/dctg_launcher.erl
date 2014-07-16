@@ -225,7 +225,12 @@ launchraw({launch}, State=#launcher_raw{
             NewFrac2 = NewFrac,
             NewIntensity2 = NewIntensity
     end,
-    RNum = erlang:min(NewIntensity2, Count),
+    if
+        Count < 0 ->
+            RNum = NewIntensity2;
+        true ->
+            RNum = erlang:min(NewIntensity2, Count)
+    end,
     NewNth = do_launch_raw(SrcMac, Data, Sock, RNum, DestList, Nth),
     {next_state, launchraw, State#launcher_raw{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
