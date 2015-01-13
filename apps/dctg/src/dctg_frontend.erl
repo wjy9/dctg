@@ -107,7 +107,7 @@ make_raw_data([], Acc) ->
     Acc.
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
-    Content = "GET " ++ URL ++ " HTTP/1.1\r\n\r\n",
+    Content = "GET " ++ URL ++ " HTTP/1.0\r\n\r\n",
     Http = #http{port = Port, content = Content, interval = Interval * 1000, start_time = round(Count / Intensity * 1000)},
     Intensity2 = Intensity / 1000 / LaunchNum, % user input intensity is per second, convert it to per ms per launcher
     % if
