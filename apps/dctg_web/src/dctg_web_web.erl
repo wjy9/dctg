@@ -79,8 +79,12 @@ loop(Req, DocRoot) ->
                 {struct, Content} = proplists:get_value(BiType, JsonBody),
                 case Type of
                     http ->
-                        Port = 80,
-                        %Port = proplists:get_value(<<"port">>, JsonBody),
+                        Port = case proplists:get_value(<<"port">>, Content) of
+                            undefined ->
+                                80;
+                            Value ->
+                                binary_to_integer(Value)
+                        end,
                         URL = binary_to_list(proplists:get_value(<<"url">>, Content)),
                         Interval = binary_to_integer(proplists:get_value(<<"interval">>, Content)),
                         dctg_frontend:config(DutStartIP, DutNum, Type, Intensity, Connection, LauncherNum, Port, URL, Interval);
