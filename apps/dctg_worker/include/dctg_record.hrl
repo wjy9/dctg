@@ -24,6 +24,7 @@
     sock,
     src_mac,
     data,
+    datalen,
     start_time,
     fraction,
     round,
@@ -47,5 +48,6 @@
     }).
 
 -record(raw, {
-    data
+    data,
+    len
     }).

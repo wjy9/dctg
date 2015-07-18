@@ -38,11 +38,12 @@ make_iplist(List = [{IP1, IP2, IP3, IP4} | _Tail], Num) ->
 config(IP, Num, raw, Intensity, Count, LaunchNum, Data, Length) ->
     if
         Length =:= undefined ->
-            D = make_raw_data(Data);
+            {D, DataLen} = make_raw_data(Data);
         true ->
-            D = make_raw(Data, Length)
+            D = make_raw(Data, Length),
+            DataLen = Length
     end,
-    Raw = #raw{data = D},
+    Raw = #raw{data = D, len = DataLen},
     Intensity2 = Intensity / 1000 / LaunchNum,
     % if
     %     Intensity2 > 6 ->
@@ -94,17 +95,17 @@ make_random_data(Data, Length) ->
     make_random_data([H | Data], Length - 1).
 
 make_raw_data(Data) ->
-    make_raw_data(Data, <<>>).
+    make_raw_data(Data, <<>>, 0).
 
-make_raw_data([C1, C2 | Tail], Acc) ->
+make_raw_data([C1, C2 | Tail], Acc, Len) ->
     Num = list_to_integer([C1, C2], 16),
-    make_raw_data(Tail, <<Acc/binary, Num>>);
-make_raw_data([C], Acc) ->
+    make_raw_data(Tail, <<Acc/binary, Num>>, Len + 1);
+make_raw_data([C], Acc, Len) ->
     Num = list_to_integer([C, $0], 16),
-    make_raw_data([], <<Acc/binary, Num>>);
-make_raw_data([], Acc) ->
+    make_raw_data([], <<Acc/binary, Num>>, Len + 1);
+make_raw_data([], Acc, Len) ->
     error_logger:info_msg("raw data: ~p~n", [Acc]),
-    Acc.
+    {Acc, Len}.
 
 config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
     Content = "GET " ++ URL ++ " HTTP/1.1\r\nHost:\r\n\r\n",
@@ -135,11 +136,12 @@ config(IP, Num, http, Intensity, Count, LaunchNum, Port, URL, Interval) ->
 config(IP, Num, raw, Intensity, Count, LaunchNum, Data, Length, NumPerIP) ->
     if
         Length =:= undefined ->
-            D = make_raw_data(Data);
+            {D, DataLen} = make_raw_data(Data);
         true ->
-            D = make_raw(Data, Length)
+            D = make_raw(Data, Length),
+            DataLen = Length
     end,
-    Raw = #raw{data = D},
+    Raw = #raw{data = D, len = DataLen},
     Intensity2 = Intensity / 1000 / LaunchNum,
     dctg_config_server:set_launcher_per_ip(NumPerIP),
     NewIntensity = Intensity2 / NumPerIP,

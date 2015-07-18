@@ -70,6 +70,7 @@ init([]) ->
                             NewCount = Count
                     end,
                     Data = Content#raw.data,
+                    DataLen = Content#raw.len,
                     SrcDev = "eth0",
                     SrcMac = send_raw_packet:get_src_mac(SrcDev),
                     %% open a PF_PACKET raw socket with ETH_P_ALL
@@ -87,6 +88,7 @@ init([]) ->
                                 sock = Socket,
                                 src_mac = SrcMac,
                                 data = Data,
+                                datalen = DataLen,
                                 fraction = 0,
                                 round = 0,
                                 nth = 1
@@ -192,6 +194,7 @@ launchraw({launch}, State=#launcher_raw{
                                     sock = Sock,
                                     src_mac = SrcMac,
                                     data = Data,
+                                    datalen = DataLen,
                                     start_time = StartTime,
                                     fraction = Frac,
                                     round = Round,
@@ -231,23 +234,24 @@ launchraw({launch}, State=#launcher_raw{
         true ->
             RNum = erlang:min(NewIntensity2, Count)
     end,
-    NewNth = do_launch_raw(SrcMac, Data, Sock, RNum, DestList, Nth),
+    NewNth = do_launch_raw(SrcMac, Data, DataLen, Sock, RNum, DestList, Nth),
     {next_state, launchraw, State#launcher_raw{count = Count - RNum, fraction = NewFrac2, round = Round + 1, nth = NewNth}}.
 
-do_launch_raw(_, _, _, Num, _, Nth) when Num =< 0 ->
+do_launch_raw(_, _, _, _, Num, _, Nth) when Num =< 0 ->
     Nth;
-do_launch_raw(SrcMac, Data, Sock, Num, DestList, Nth) ->
+do_launch_raw(SrcMac, Data, DataLen, Sock, Num, DestList, Nth) ->
     DstMac = element(Nth, DestList),
     case procket:sendto(Sock, send_raw_packet:make_rawpkt(SrcMac, DstMac, Data)) of
         ok ->
-            dctg_stat_cache:put(packet, 1);
+            dctg_stat_cache:put(packet, 1),
+            dctg_stat_cache:put(byte, DataLen);
         Error ->
             % error_logger:info_msg("launcher raw sendto failed, ~p~n", [Error])
             ok
     end,
     Size = size(DestList),
     NewNth = (Nth rem Size) + 1,
-    do_launch_raw(SrcMac, Data, Sock, Num - 1, DestList, NewNth).
+    do_launch_raw(SrcMac, Data, DataLen, Sock, Num - 1, DestList, NewNth).
 
 handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.

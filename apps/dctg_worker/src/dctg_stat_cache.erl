@@ -9,16 +9,8 @@
     id,
     controller,
     timestamp = 0,
-    connect = 0,
-    request = 0,
-    packet = 0,
-    total_connect = 0,
-    total_request = 0,
-    total_packet = 0,
-    init = 0,
-    tcpconn = 0,
-    init_t = 0,
-    tcp_t = 0
+    statmap = #{},
+    totalmap = #{}
     }).
 
 -define(SEND_INTERVAL, 1000).
@@ -39,27 +31,47 @@ init([]) ->
     ID = utils:get_id(),
     {ok, #state{id = ID, controller = ControllerNode}}.
 
-handle_cast({put, connect, Val}, State = #state{connect = Connect, total_connect = Total}) ->
-    %error_logger:info_msg("WJY: stat cache put connect~n"),
-    NewConnect = Connect + Val,
-    NewTotal = Total + Val,
-    {noreply, State#state{connect = NewConnect, total_connect = NewTotal}};
+handle_cast({put, Key, Val}, State = #state{statmap = Map, totalmap = TMap}) ->
+    case maps:find(Key, Map) of
+        {ok, Value} ->
+            NMap = Map#{Key => Value + Val};
+        error ->
+            NMap = Map#{Key => Val}
+    end,
+    case maps:find(Key, TMap) of
+        {ok, TV} ->
+            NTM = TMap#{Key => TV + Val};
+        error ->
+            NTM = TMap#{Key => Val}
+    end,
+    {noreply, State#state{statmap = NMap, totalmap = NTM}};
 
-handle_cast({put, request, Val}, State = #state{request = Request, total_request = Total}) ->
-    NewRequest = Request + Val,
-    NewTotal = Total + Val,
-    {noreply, State#state{request = NewRequest, total_request = NewTotal}};
+% handle_cast({put, connect, Val}, State = #state{connect = Connect, total_connect = Total}) ->
+%     %error_logger:info_msg("WJY: stat cache put connect~n"),
+%     NewConnect = Connect + Val,
+%     NewTotal = Total + Val,
+%     {noreply, State#state{connect = NewConnect, total_connect = NewTotal}};
 
-handle_cast({put, packet, Val}, State = #state{packet = P, total_packet = T}) ->
-    NP = P + Val,
-    NT = T + Val,
-    {noreply, State#state{packet = NP, total_packet = NT}};
+% handle_cast({put, request, Val}, State = #state{request = Request, total_request = Total}) ->
+%     NewRequest = Request + Val,
+%     NewTotal = Total + Val,
+%     {noreply, State#state{request = NewRequest, total_request = NewTotal}};
 
-handle_cast({put, init, Val}, State = #state{init = Init, init_t = T}) ->
-    {noreply, State#state{init = Init + Val, init_t = T + Val}};
+% handle_cast({put, packet, Val}, State = #state{packet = P, total_packet = T}) ->
+%     NP = P + Val,
+%     NT = T + Val,
+%     {noreply, State#state{packet = NP, total_packet = NT}};
 
-handle_cast({put, tcpconn, Val}, State = #state{tcpconn = C, tcp_t = T}) ->
-    {noreply, State#state{tcpconn = C + Val, tcp_t = T + Val}};
+% handle_cast({put, byte, Val}, State = #state{byte = B, total_byte = T}) ->
+%     NB = B + Val,
+%     NT = T + Val,
+%     {noreply, State#state{byte = NB, total_byte = NT}};
+
+% handle_cast({put, init, Val}, State = #state{init = Init, init_t = T}) ->
+%     {noreply, State#state{init = Init + Val, init_t = T + Val}};
+
+% handle_cast({put, tcpconn, Val}, State = #state{tcpconn = C, tcp_t = T}) ->
+%     {noreply, State#state{tcpconn = C + Val, tcp_t = T + Val}};
 
 handle_cast({start_send, StartTime}, State) ->
     Time = case utils:timediff(StartTime, os:timestamp()) + ?SEND_INTERVAL of
@@ -76,23 +88,16 @@ handle_call(_Call, _From, State) ->
     {reply, error, State}.
 
 handle_info({timeout, _Ref, send}, State = #state{id = ID, controller = Node, timestamp = TimeStamp,
-                                            connect = Connect,
-                                            request = Request,
-                                            packet = Packet,
-                                            total_connect = TConn,
-                                            total_request = TReq,
-                                            total_packet = TPkt,
-                                            init = Init,
-                                            tcpconn = TC,
-                                            init_t = IT,
-                                            tcp_t = TcT}) ->
+                                            statmap = Map,
+                                            totalmap = TMap
+                                            }) ->
     %error_logger:info_msg("WJY: stat cache timeout send~n"),
     %error_logger:info_msg("memory usage: ~p~n", [erlang:memory()]),
-    dctg_monitor:send_stat(Node, ID, TimeStamp, {Connect, Request, Packet, TConn, TReq, TPkt, Init, IT, TC, TcT}),
+    dctg_monitor:send_stat(Node, ID, TimeStamp, {Map, TMap}),
     %error_logger:info_msg("WJY: stat cache send ~p~n", [{Connect, ID, TimeStamp}]),
     NewTimeStamp = TimeStamp + 1,
     erlang:start_timer(?SEND_INTERVAL, self(), send),
-    {noreply, State#state{timestamp = NewTimeStamp, connect = 0, request = 0, packet = 0, init = 0, tcpconn = 0}}.
+    {noreply, State#state{timestamp = NewTimeStamp, statmap = #{}}}.
 
 terminate(_Reason, _State) ->
     ok.

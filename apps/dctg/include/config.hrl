@@ -15,5 +15,6 @@
     }).
 
 -record(raw, {
-    data
+    data,
+    len
     }).
